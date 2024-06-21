@@ -28,6 +28,8 @@ impl Lerp64 for f64 {
 
 impl Lerp for Color {
     fn lerp(&self, to: Self, t: f32) -> Self {
+        // knutsoned - the previous code could get color components like self.r()
+        // I think self.linear().red is the equivalent, but not completely sure
         let from = self.linear();
         let target = to.linear();
         Color::srgba(

@@ -513,8 +513,8 @@ fn setup(
             .style()
             .height(Val::Percent(100.0))
             .background_color(Color::NONE);
+        bevy::log::info!("...added ShowcaseContainer");
     });
-
     bevy::log::info!("SETUP complete");
 }
 
