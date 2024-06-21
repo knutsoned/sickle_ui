@@ -1,5 +1,6 @@
 use bevy::{
-    ecs::system::{EntityCommand, EntityCommands},
+    color::palettes::css::*,
+    ecs::system::{ EntityCommand, EntityCommands },
     prelude::*,
     ui::FocusPolicy,
 };
@@ -20,10 +21,10 @@ impl Default for LabelConfig {
     fn default() -> Self {
         Self {
             label: "Label".into(),
-            color: Color::ANTIQUE_WHITE,
+            color: Color::Srgba(ANTIQUE_WHITE),
             margin: Default::default(),
             wrap: FlexWrap::NoWrap,
-            flex_grow: 0.,
+            flex_grow: 0.0,
         }
     }
 }
@@ -39,7 +40,7 @@ impl LabelConfig {
     fn text_style(&self) -> TextStyle {
         TextStyle {
             color: self.color,
-            font_size: 14.,
+            font_size: 14.0,
             ..default()
         }
     }
@@ -96,10 +97,7 @@ impl EntityCommand for UpdateLabelText {
         };
         let style = config.text_style();
         let Some(mut text) = world.get_mut::<Text>(entity) else {
-            warn!(
-                "Failed to set label text on entity {:?}: No Text component found!",
-                entity
-            );
+            warn!("Failed to set label text on entity {:?}: No Text component found!", entity);
 
             return;
         };

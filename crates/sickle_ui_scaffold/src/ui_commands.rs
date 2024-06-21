@@ -6,19 +6,22 @@ use bevy::{
         component::ComponentInfo,
         entity::Entity,
         query::With,
-        system::{Command, Commands, EntityCommand, EntityCommands},
-        world::{Mut, World},
+        system::{ Commands, EntityCommand, EntityCommands },
+        world::{ Command, Mut, World },
     },
-    hierarchy::{Children, Parent},
-    log::{info, warn},
-    text::{Text, TextSection, TextStyle},
-    ui::{Interaction, UiSurface},
-    window::{CursorIcon, PrimaryWindow, Window},
+    hierarchy::{ Children, Parent },
+    log::{ info, warn },
+    text::{ Text, TextSection, TextStyle },
+    ui::Interaction,
+    window::{ CursorIcon, PrimaryWindow, Window },
 };
 
 use crate::{
     flux_interaction::{
-        FluxInteraction, FluxInteractionStopwatchLock, StopwatchLock, TrackedInteraction,
+        FluxInteraction,
+        FluxInteractionStopwatchLock,
+        StopwatchLock,
+        TrackedInteraction,
     },
     prelude::UiUtils,
     theme::prelude::*,
@@ -32,10 +35,7 @@ struct SetTextSections {
 impl EntityCommand for SetTextSections {
     fn apply(self, entity: Entity, world: &mut World) {
         let Some(mut text) = world.get_mut::<Text>(entity) else {
-            warn!(
-                "Failed to set text sections on entity {:?}: No Text component found!",
-                entity
-            );
+            warn!("Failed to set text sections on entity {:?}: No Text component found!", entity);
             return;
         };
 
@@ -62,10 +62,7 @@ struct SetText {
 impl EntityCommand for SetText {
     fn apply(self, entity: Entity, world: &mut World) {
         let Some(mut text) = world.get_mut::<Text>(entity) else {
-            warn!(
-                "Failed to set text on entity {:?}: No Text component found!",
-                entity
-            );
+            warn!("Failed to set text on entity {:?}: No Text component found!", entity);
             return;
         };
 
@@ -95,10 +92,7 @@ struct UpdateText {
 impl EntityCommand for UpdateText {
     fn apply(self, entity: Entity, world: &mut World) {
         let Some(mut text) = world.get_mut::<Text>(entity) else {
-            warn!(
-                "Failed to set text on entity {:?}: No Text component found!",
-                entity
-            );
+            warn!("Failed to set text on entity {:?}: No Text component found!", entity);
             return;
         };
 
@@ -162,7 +156,10 @@ impl EntityCommand for LogHierarchy {
     fn apply(self, id: Entity, world: &mut World) {
         let mut children_ids: Vec<Entity> = Vec::new();
         if let Some(children) = world.get::<Children>(id) {
-            children_ids = children.iter().map(|child| *child).collect();
+            children_ids = children
+                .iter()
+                .map(|child| *child)
+                .collect();
         }
 
         let filter = self.component_filter;
@@ -170,11 +167,7 @@ impl EntityCommand for LogHierarchy {
             .inspect_entity(id)
             .into_iter()
             .filter(|component_info| {
-                if let Some(filter) = filter {
-                    filter((*component_info).clone())
-                } else {
-                    true
-                }
+                if let Some(filter) = filter { filter((*component_info).clone()) } else { true }
             })
             .map(UiUtils::simplify_component_name)
             .collect();
@@ -200,25 +193,14 @@ impl EntityCommand for LogHierarchy {
 
         info!("{}", entity_text);
         for i in 0..debug_infos.len() {
-            let is_last = i == (debug_infos.len() - 1);
+            let is_last = i == debug_infos.len() - 1;
             let component_pipe = if is_last { "└" } else { "├" };
             let child_pipe = if self.is_last {
-                if has_children {
-                    "      ║      "
-                } else {
-                    "             "
-                }
+                if has_children { "      ║      " } else { "             " }
             } else {
-                if has_children {
-                    "  ║   ║      "
-                } else {
-                    "  ║          "
-                }
+                if has_children { "  ║   ║      " } else { "  ║          " }
             };
-            info!(
-                "{}{}{}── {}",
-                padding, child_pipe, component_pipe, debug_infos[i]
-            );
+            info!("{}{}{}── {}", padding, child_pipe, component_pipe, debug_infos[i]);
         }
 
         if children_ids.len() > 0 {
@@ -226,19 +208,18 @@ impl EntityCommand for LogHierarchy {
 
             for i in 0..children_ids.len() {
                 let child = children_ids[i];
-                let is_last = i == (children_ids.len() - 1);
+                let is_last = i == children_ids.len() - 1;
                 let mut trace_levels = self.trace_levels.clone();
                 if !is_last {
                     trace_levels.push(self.level);
                 }
 
-                LogHierarchy {
+                (LogHierarchy {
                     level: next_level,
                     is_last,
                     trace_levels,
                     component_filter: self.component_filter,
-                }
-                .apply(child, world);
+                }).apply(child, world);
             }
         }
     }
@@ -289,12 +270,15 @@ impl LogHierarchyExt for EntityCommands<'_> {
 pub struct ResetChildrenInUiSurface;
 impl EntityCommand for ResetChildrenInUiSurface {
     fn apply(self, id: Entity, world: &mut World) {
+        bevy::log::error!("we DO need this");
+        /* knutsoned - this is now private, hope we don't need it much
         world.resource_scope(|world, mut ui_surface: Mut<UiSurface>| {
             let Ok(children) = world.query::<&Children>().get(world, id) else {
                 return;
             };
             ui_surface.update_children(id, children);
         });
+        */
     }
 }
 
@@ -310,16 +294,11 @@ impl EntityCommandsNamedExt for EntityCommands<'_> {
 }
 
 pub trait RefreshThemeExt {
-    fn refresh_theme<C>(&mut self) -> &mut Self
-    where
-        C: DefaultTheme;
+    fn refresh_theme<C>(&mut self) -> &mut Self where C: DefaultTheme;
 }
 
 impl RefreshThemeExt for EntityCommands<'_> {
-    fn refresh_theme<C>(&mut self) -> &mut Self
-    where
-        C: DefaultTheme,
-    {
+    fn refresh_theme<C>(&mut self) -> &mut Self where C: DefaultTheme {
         self.add(RefreshEntityTheme::<C> {
             context: PhantomData,
         });
@@ -327,17 +306,11 @@ impl RefreshThemeExt for EntityCommands<'_> {
     }
 }
 
-struct RefreshEntityTheme<C>
-where
-    C: DefaultTheme,
-{
+struct RefreshEntityTheme<C> where C: DefaultTheme {
     context: PhantomData<C>,
 }
 
-impl<C> EntityCommand for RefreshEntityTheme<C>
-where
-    C: DefaultTheme,
-{
+impl<C> EntityCommand for RefreshEntityTheme<C> where C: DefaultTheme {
     fn apply(self, entity: Entity, world: &mut World) {
         let context = world.get::<C>(entity).unwrap().clone();
         let theme_data = world.resource::<ThemeData>().clone();
@@ -386,11 +359,17 @@ where
 
         // Assuming we have a base style and two-three pseudo state style is a reasonable guess.
         // TODO: Cache most common pseudo theme count in theme data.
-        let mut pseudo_themes: Vec<(&PseudoTheme<C>, Option<Entity>)> =
-            Vec::with_capacity(themes.len() * 4);
+        let mut pseudo_themes: Vec<(&PseudoTheme<C>, Option<Entity>)> = Vec::with_capacity(
+            themes.len() * 4
+        );
 
         for (theme, source_entity) in &themes {
-            if let Some(base_theme) = theme.pseudo_themes().iter().find(|pt| pt.is_base_theme()) {
+            if
+                let Some(base_theme) = theme
+                    .pseudo_themes()
+                    .iter()
+                    .find(|pt| pt.is_base_theme())
+            {
                 pseudo_themes.push((base_theme, *source_entity));
             }
         }
@@ -410,8 +389,8 @@ where
         // Merge base attributes on top of the default and down the chain, overwriting per-attribute at each level
         let styles: Vec<(Option<Entity>, DynamicStyle)> = pseudo_themes
             .iter()
-            .map(
-                |(pseudo_theme, source_entity)| match pseudo_theme.builder().clone() {
+            .map(|(pseudo_theme, source_entity)| {
+                match pseudo_theme.builder().clone() {
                     DynamicStyleBuilder::Static(style) => vec![(None, style.clone())],
                     DynamicStyleBuilder::StyleBuilder(builder) => {
                         let mut style_builder = StyleBuilder::new();
@@ -439,31 +418,28 @@ where
                             pseudo_theme.state(),
                             entity,
                             &context,
-                            world,
+                            world
                         );
 
                         style_builder.convert_with(&context)
                     }
-                },
-            )
+                }
+            })
             .filter(|e_to_dys| e_to_dys.len() > 0)
-            .fold(
-                Vec::with_capacity(context.contexts().len() + 1),
-                |mut acc, context_styles| {
-                    for context_style in context_styles {
-                        let index = acc.iter().position(|entry| entry.0 == context_style.0);
-                        match index {
-                            Some(index) => {
-                                let (_, prev_entry) = acc[index].clone();
-                                acc[index].1 = prev_entry.merge(context_style.1);
-                            }
-                            None => acc.push(context_style),
+            .fold(Vec::with_capacity(context.contexts().len() + 1), |mut acc, context_styles| {
+                for context_style in context_styles {
+                    let index = acc.iter().position(|entry| entry.0 == context_style.0);
+                    match index {
+                        Some(index) => {
+                            let (_, prev_entry) = acc[index].clone();
+                            acc[index].1 = prev_entry.merge(context_style.1);
                         }
+                        None => acc.push(context_style),
                     }
+                }
 
-                    acc
-                },
-            );
+                acc
+            });
 
         let mut cleanup_main_style = true;
         let mut unstyled_entities: Vec<Entity> = context
@@ -493,15 +469,11 @@ where
             if style.is_interactive() || style.is_animated() {
                 world.entity_mut(placement_entity).insert(style);
                 if world.get::<Interaction>(placement_entity).is_none() {
-                    world
-                        .entity_mut(placement_entity)
-                        .insert(Interaction::default());
+                    world.entity_mut(placement_entity).insert(Interaction::default());
                 }
 
                 if world.get_mut::<FluxInteraction>(placement_entity).is_none() {
-                    world
-                        .entity_mut(placement_entity)
-                        .insert(TrackedInteraction::default());
+                    world.entity_mut(placement_entity).insert(TrackedInteraction::default());
                 }
             } else {
                 world.entity_mut(placement_entity).insert(style);

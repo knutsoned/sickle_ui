@@ -13,6 +13,6 @@ sickle_math = { path = "crates/sickle_math" }
 sickle_macros = { path = "crates/sickle_macros" }
 sickle_ui_scaffold = { path = "crates/sickle_ui_scaffold" }
 
-bevy = { version = "0.13" }
-bevy_reflect = { version = "0.13" }
+bevy = { git = "https://github.com/pcwalton/bevy.git", branch = "brp", version = "0.14.0-dev" }
+#bevy_reflect = { version = "0.13" }
 serde = { version = "1.0", features = ["derive"] }

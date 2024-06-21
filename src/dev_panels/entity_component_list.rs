@@ -1,4 +1,4 @@
-use bevy::{ecs::system::CommandQueue, prelude::*};
+use bevy::{ ecs::world::CommandQueue, prelude::* };
 
 use crate::prelude::*;
 
@@ -6,8 +6,10 @@ pub struct EntityComponentListPlugin;
 
 impl Plugin for EntityComponentListPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(EntityComponentTagPlugin)
-            .add_systems(Update, update_entity_component_lists);
+        app.add_plugins(EntityComponentTagPlugin).add_systems(
+            Update,
+            update_entity_component_lists
+        );
     }
 }
 
@@ -27,7 +29,7 @@ fn update_entity_component_lists(world: &mut World) {
 fn update_entity_component_list(
     container: Entity,
     selected_entity: Option<Entity>,
-    world: &mut World,
+    world: &mut World
 ) {
     if let Some(selected) = selected_entity {
         if world.get_entity(selected).is_none() {
@@ -75,15 +77,12 @@ pub trait UiEntityComponentListExt {
 impl UiEntityComponentListExt for UiBuilder<'_, Entity> {
     fn entity_component_list(&mut self, entity: Option<Entity>) -> UiBuilder<Entity> {
         self.row(|row| {
-            row.insert((
-                Name::new("Entity Component List"),
-                EntityComponentList { entity },
-            ))
-            .style()
-            .overflow(Overflow::clip())
-            .flex_wrap(FlexWrap::Wrap)
-            .align_items(AlignItems::FlexStart)
-            .align_content(AlignContent::FlexStart);
+            row.insert((Name::new("Entity Component List"), EntityComponentList { entity }))
+                .style()
+                .overflow(Overflow::clip())
+                .flex_wrap(FlexWrap::Wrap)
+                .align_items(AlignItems::FlexStart)
+                .align_content(AlignContent::FlexStart);
         })
     }
 }
@@ -121,11 +120,14 @@ impl UiContext for EntityComponentTag {
     fn get(&self, target: &str) -> Result<Entity, String> {
         match target {
             EntityComponentTag::LABEL => Ok(self.label),
-            _ => Err(format!(
-                "{} doesn't exists for EntityComponentTag. Possible contexts: {:?}",
-                target,
-                self.contexts()
-            )),
+            _ =>
+                Err(
+                    format!(
+                        "{} doesn't exists for EntityComponentTag. Possible contexts: {:?}",
+                        target,
+                        self.contexts()
+                    )
+                ),
         }
     }
 
@@ -145,9 +147,7 @@ impl EntityComponentTag {
     fn primary_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
         let theme_spacing = theme_data.spacing;
         let colors = theme_data.colors();
-        let font = theme_data
-            .text
-            .get(FontStyle::Body, FontScale::Medium, FontType::Regular);
+        let font = theme_data.text.get(FontStyle::Body, FontScale::Medium, FontType::Regular);
 
         style_builder
             .padding(UiRect::all(Val::Px(theme_spacing.gaps.small)))

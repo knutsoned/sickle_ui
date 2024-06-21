@@ -1,9 +1,14 @@
 use bevy::{
+    color::palettes::css::*,
     prelude::*,
     render::{
         camera::RenderTarget,
         render_resource::{
-            Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
+            Extent3d,
+            TextureDescriptor,
+            TextureDimension,
+            TextureFormat,
+            TextureUsages,
         },
     },
     ui::widget::UiImageSize,
@@ -15,11 +20,11 @@ use sickle_ui_scaffold::prelude::*;
 
 use crate::widgets::{
     inputs::{
-        checkbox::{Checkbox, UiCheckboxExt},
-        radio_group::{RadioGroup, UiRadioGroupExt},
-        slider::{Slider, SliderAxis, SliderConfig, UiSliderExt},
+        checkbox::{ Checkbox, UiCheckboxExt },
+        radio_group::{ RadioGroup, UiRadioGroupExt },
+        slider::{ Slider, SliderAxis, SliderConfig, UiSliderExt },
     },
-    layout::{column::UiColumnExt, row::UiRowExt},
+    layout::{ column::UiColumnExt, row::UiRowExt },
     WidgetLibraryUpdate,
 };
 
@@ -37,14 +42,13 @@ impl Plugin for SceneViewPlugin {
                     cleanup_despawned_scene_views,
                     set_scene_view_cam_viewport,
                     update_scene_view_controls,
-                )
-                    .in_set(SpawnSceneViewPreUpdate),
+                ).in_set(SpawnSceneViewPreUpdate)
             )
             .add_systems(
                 Update,
                 (process_scene_view_controls, update_scene_views)
                     .chain()
-                    .in_set(SpawnSceneViewUpdate),
+                    .in_set(SpawnSceneViewUpdate)
             );
     }
 }
@@ -60,7 +64,7 @@ fn spawn_scene_view(
     asset_server: Res<AssetServer>,
     mut active_scene_views: ResMut<ActiveSceneViews>,
     mut images: ResMut<Assets<Image>>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     for (container, spawn_scene_view) in &q_spanw_scene_view {
         let size = Extent3d {
@@ -78,9 +82,9 @@ fn spawn_scene_view(
                 format: TextureFormat::Bgra8UnormSrgb,
                 mip_level_count: 1,
                 sample_count: 1,
-                usage: TextureUsages::TEXTURE_BINDING
-                    | TextureUsages::COPY_DST
-                    | TextureUsages::RENDER_ATTACHMENT,
+                usage: TextureUsages::TEXTURE_BINDING |
+                TextureUsages::COPY_DST |
+                TextureUsages::RENDER_ATTACHMENT,
                 view_formats: &[],
             },
             ..default()
@@ -94,13 +98,15 @@ fn spawn_scene_view(
             .spawn((
                 Camera3dBundle {
                     camera: Camera {
-                        clear_color: Color::DARK_GRAY.into(),
+                        clear_color: Color::Srgba(DARK_GRAY).into(),
                         order: 0,
                         target: image_handle.clone().into(),
                         ..default()
                     },
-                    transform: Transform::from_xyz(0., 2., -3.)
-                        .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
+                    transform: Transform::from_xyz(0.0, 2.0, -3.0).looking_at(
+                        Vec3::new(0.0, 0.0, 0.0),
+                        Vec3::Y
+                    ),
                     ..default()
                 },
                 FogSettings {
@@ -114,31 +120,37 @@ fn spawn_scene_view(
             ))
             .id();
 
-        let transform =
-            Transform::from_xyz(0., 10., 3.).looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y);
+        let transform = Transform::from_xyz(0.0, 10.0, 3.0).looking_at(
+            Vec3::new(0.0, 0.0, 0.0),
+            Vec3::Y
+        );
         let scene_light = commands
-            .spawn((DirectionalLightBundle {
-                directional_light: DirectionalLight {
-                    color: Color::rgb(1., 0.953, 0.886),
-                    shadows_enabled: true,
+            .spawn((
+                DirectionalLightBundle {
+                    directional_light: DirectionalLight {
+                        color: Color::rgb(1.0, 0.953, 0.886),
+                        shadows_enabled: true,
+                        ..default()
+                    },
+                    transform,
                     ..default()
                 },
-                transform,
-                ..default()
-            },))
+            ))
             .id();
 
-        let mut transform = Transform::from_xyz(0., 0., 0.);
-        transform.scale = Vec3::splat(1.);
+        let mut transform = Transform::from_xyz(0.0, 0.0, 0.0);
+        transform.scale = Vec3::splat(1.0);
 
         let asset = spawn_scene_view.asset_path.clone();
         let scene_asset = commands
             .spawn((TransformBundle::default(), VisibilityBundle::default()))
             .with_children(|scene| {
-                scene.spawn((SceneBundle {
-                    scene: asset_server.load(asset),
-                    ..default()
-                },));
+                scene.spawn((
+                    SceneBundle {
+                        scene: asset_server.load(asset),
+                        ..default()
+                    },
+                ));
             })
             .id();
 
@@ -174,45 +186,45 @@ fn spawn_scene_view(
                     scene_view: container,
                 });
             scene_controls
-                .slider(SliderConfig::new(
-                    String::from("Rotation Speed"),
-                    -1.,
-                    1.,
-                    0.1,
-                    true,
-                    SliderAxis::Horizontal,
-                ))
+                .slider(
+                    SliderConfig::new(
+                        String::from("Rotation Speed"),
+                        -1.0,
+                        1.0,
+                        0.1,
+                        true,
+                        SliderAxis::Horizontal
+                    )
+                )
                 .insert(SceneRotationSpeedControl {
                     scene_view: container,
                 })
                 .style()
-                .min_width(Val::Px(250.));
+                .min_width(Val::Px(250.0));
             scene_controls
                 .row(|row| {
-                    row.radio_group(vec!["Natural", "Dim", "Night"], 1, true)
-                        .insert(SceneLightControl {
+                    row.radio_group(vec!["Natural", "Dim", "Night"], 1, true).insert(
+                        SceneLightControl {
                             scene_view: container,
-                        });
+                        }
+                    );
                 })
                 .style()
-                .min_width(Val::Px(150.));
+                .min_width(Val::Px(150.0));
         });
 
-        active_scene_views.scene_views.insert(
-            container,
-            SceneView {
-                camera: scene_camera,
-                light: scene_light,
-                asset_root: scene_asset,
-            },
-        );
+        active_scene_views.scene_views.insert(container, SceneView {
+            camera: scene_camera,
+            light: scene_light,
+            asset_root: scene_asset,
+        });
     }
 }
 
 fn cleanup_despawned_scene_views(
     mut q_removed_scene_views: RemovedComponents<SceneView>,
     mut active_scene_views: ResMut<ActiveSceneViews>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     for entity in q_removed_scene_views.read() {
         let Some(data) = active_scene_views.scene_views.remove(&entity) else {
@@ -229,7 +241,7 @@ fn cleanup_despawned_scene_views(
 fn set_scene_view_cam_viewport(
     q_scene_views: Query<(&SceneView, &Node), Changed<GlobalTransform>>,
     mut images: ResMut<Assets<Image>>,
-    mut q_camera: Query<&mut Camera>,
+    mut q_camera: Query<&mut Camera>
 ) {
     for (scene_view, node) in &q_scene_views {
         let Ok(mut camera) = q_camera.get_mut(scene_view.camera()) else {
@@ -238,7 +250,7 @@ fn set_scene_view_cam_viewport(
 
         let size = node.size();
 
-        if size.x == 0. || size.y == 0. {
+        if size.x == 0.0 || size.y == 0.0 {
             camera.is_active = false;
             continue;
         }
@@ -246,7 +258,7 @@ fn set_scene_view_cam_viewport(
         camera.is_active = true;
 
         if let RenderTarget::Image(render_texture) = camera.target.clone() {
-            let Some(texture) = images.get_mut(render_texture) else {
+            let Some(texture) = images.get_mut(&render_texture) else {
                 continue;
             };
 
@@ -265,7 +277,7 @@ fn update_scene_view_controls(
     q_scene_view_settings: Query<&SceneViewSettings, Changed<SceneViewSettings>>,
     mut q_rotation_controls: Query<(&mut Checkbox, &SceneRotationControl)>,
     mut q_rotation_speed_controls: Query<(&mut Slider, &SceneRotationSpeedControl)>,
-    mut q_light_controls: Query<(&mut RadioGroup, &SceneLightControl)>,
+    mut q_light_controls: Query<(&mut RadioGroup, &SceneLightControl)>
 ) {
     for (mut checkbox, control) in &mut q_rotation_controls {
         let Ok(settings) = q_scene_view_settings.get(control.scene_view) else {
@@ -302,7 +314,7 @@ fn process_scene_view_controls(
     mut q_scene_view_settings: Query<&mut SceneViewSettings>,
     q_rotation_controls: Query<(&Checkbox, &SceneRotationControl), Changed<Checkbox>>,
     q_rotation_speed_controls: Query<(&Slider, &SceneRotationSpeedControl), Changed<Slider>>,
-    q_light_controls: Query<(&RadioGroup, &SceneLightControl), Changed<RadioGroup>>,
+    q_light_controls: Query<(&RadioGroup, &SceneLightControl), Changed<RadioGroup>>
 ) {
     for (checkbox, control) in &q_rotation_controls {
         let Ok(mut settings) = q_scene_view_settings.get_mut(control.scene_view) else {
@@ -344,22 +356,22 @@ fn update_scene_views(
     mut ambient_light: ResMut<AmbientLight>,
     mut q_directional_light: Query<&mut DirectionalLight>,
     mut q_fog_settings: Query<&mut FogSettings>,
-    mut q_transform: Query<&mut Transform>,
+    mut q_transform: Query<&mut Transform>
 ) {
     for (scene_view, settings) in &q_scene_views {
         let Ok(mut transform) = q_transform.get_mut(scene_view.camera()) else {
             continue;
         };
 
-        if settings.do_rotate && settings.rotation_speed != 0. {
+        if settings.do_rotate && settings.rotation_speed != 0.0 {
             transform.rotate_around(
                 Vec3::ZERO,
                 Quat::from_euler(
                     EulerRot::default(),
                     -time.delta_seconds() * settings.rotation_speed,
-                    0.,
-                    0.,
-                ),
+                    0.0,
+                    0.0
+                )
             );
         }
 
@@ -373,9 +385,9 @@ fn update_scene_views(
 
             match settings.light {
                 0 => {
-                    light.color = Color::rgb(1., 0.953, 0.886);
-                    light.illuminance = 13500.;
-                    ambient_light.brightness = 500.;
+                    light.color = Color::rgb(1.0, 0.953, 0.886);
+                    light.illuminance = 13500.0;
+                    ambient_light.brightness = 500.0;
                     fog.falloff = FogFalloff::Linear {
                         start: 7.0,
                         end: 12.0,
@@ -383,17 +395,17 @@ fn update_scene_views(
                 }
                 1 => {
                     light.color = Color::rgb(0.78, 0.76, 0.745);
-                    light.illuminance = 9000.;
-                    ambient_light.brightness = 300.;
+                    light.illuminance = 9000.0;
+                    ambient_light.brightness = 300.0;
                     fog.falloff = FogFalloff::Linear {
                         start: 6.0,
                         end: 15.0,
                     };
                 }
                 2 => {
-                    light.color = Color::rgb(0.73, 0.90, 0.95); // Color::rgb(0.53, 0.8, 0.92);
-                    light.illuminance = 300.;
-                    ambient_light.brightness = 5.;
+                    light.color = Color::rgb(0.73, 0.9, 0.95); // Color::rgb(0.53, 0.8, 0.92);
+                    light.illuminance = 300.0;
+                    ambient_light.brightness = 5.0;
                     fog.falloff = FogFalloff::Linear {
                         start: 5.0,
                         end: 20.0,
@@ -549,7 +561,7 @@ impl UiSceneViewExt for UiBuilder<'_, Entity> {
             ))
             .style() // Needed until UiImage stops depending on background color
             .background_color(Color::WHITE)
-            .width(Val::Percent(100.))
+            .width(Val::Percent(100.0))
             .id();
 
         self.commands().ui_builder(column)

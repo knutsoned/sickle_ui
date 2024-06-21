@@ -1,21 +1,23 @@
-use bevy::prelude::*;
+use bevy::{ color::palettes::css::*, prelude::* };
 
 use sickle_ui_scaffold::prelude::*;
 
 use crate::widgets::{
     layout::{
         column::UiColumnExt,
-        foldable::{Foldable, UiFoldableExt},
+        foldable::{ Foldable, UiFoldableExt },
         panel::UiPanelExt,
         row::UiRowExt,
         scroll_view::UiScrollViewExt,
-        sized_zone::{SizedZoneConfig, UiSizedZoneExt},
+        sized_zone::{ SizedZoneConfig, UiSizedZoneExt },
     },
-    menus::menu_item::{MenuItem, MenuItemConfig, UiMenuItemExt},
+    menus::menu_item::{ MenuItem, MenuItemConfig, UiMenuItemExt },
 };
 
 use super::entity_component_list::{
-    EntityComponentList, EntityComponentListPlugin, UiEntityComponentListExt,
+    EntityComponentList,
+    EntityComponentListPlugin,
+    UiEntityComponentListExt,
 };
 
 // TODO: Move to subapp? to separate inspection from UI entities
@@ -38,7 +40,7 @@ impl Plugin for HierarchyTreeViewPlugin {
                 update_entity_component_list,
             )
                 .chain()
-                .in_set(HierarchyPreUpdate),
+                .in_set(HierarchyPreUpdate)
         );
     }
 }
@@ -50,24 +52,20 @@ fn initialize_hierarchy_tree_view(
     q_hierarchy_nodes: Query<(Entity, &HierarchyNodeContainer), Added<HierarchyNodeContainer>>,
     q_hierarchy: Query<&HierarchyContainer>,
     q_name: Query<&Name>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     for (entity, node_container) in &q_hierarchy_nodes {
         let Ok(hierarchy) = q_hierarchy.get(node_container.hierarchy) else {
             warn!(
                 "Hierarchy node container {:?} missing main container {:?}",
-                entity, node_container.hierarchy
+                entity,
+                node_container.hierarchy
             );
             continue;
         };
 
         let mut container = commands.ui_builder(entity);
-        spawn_hierarchy_level(
-            node_container.hierarchy,
-            hierarchy.root,
-            &mut container,
-            &q_name,
-        );
+        spawn_hierarchy_level(node_container.hierarchy, hierarchy.root, &mut container, &q_name);
     }
 }
 
@@ -75,7 +73,7 @@ fn refresh_hierarchy_on_press(
     q_menu_items: Query<(&MenuItem, &RefreshHierarchyButton), Changed<MenuItem>>,
     q_name: Query<&Name>,
     mut q_hierarchy: Query<&mut HierarchyContainer>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     for (menu_item, refresh_button) in &q_menu_items {
         if menu_item.interacted() {
@@ -85,18 +83,11 @@ fn refresh_hierarchy_on_press(
 
             hierarchy.selected = None;
 
-            commands
-                .entity(refresh_button.container)
-                .despawn_descendants();
+            commands.entity(refresh_button.container).despawn_descendants();
 
             let mut builder = commands.ui_builder(refresh_button.container);
 
-            spawn_hierarchy_level(
-                refresh_button.hierarchy,
-                hierarchy.root,
-                &mut builder,
-                &q_name,
-            );
+            spawn_hierarchy_level(refresh_button.hierarchy, hierarchy.root, &mut builder, &q_name);
 
             break;
         }
@@ -105,7 +96,7 @@ fn refresh_hierarchy_on_press(
 
 fn update_hierarchy_selection(
     q_hierarchy_nodes: Query<(&FluxInteraction, &HierarchyNode), Changed<FluxInteraction>>,
-    mut q_hierarchy: Query<&mut HierarchyContainer>,
+    mut q_hierarchy: Query<&mut HierarchyContainer>
 ) {
     for (interaction, hierarchy_node) in &q_hierarchy_nodes {
         if interaction.is_released() {
@@ -122,11 +113,12 @@ fn update_hierarchy_selection(
 
 fn update_entity_component_list(
     q_hierarchies: Query<&mut HierarchyContainer, Changed<HierarchyContainer>>,
-    mut q_entity_component_list: Query<&mut EntityComponentList>,
+    mut q_entity_component_list: Query<&mut EntityComponentList>
 ) {
     for hierarchy in &q_hierarchies {
-        let Ok(mut component_list) = q_entity_component_list.get_mut(hierarchy.component_list)
-        else {
+        let Ok(mut component_list) = q_entity_component_list.get_mut(
+            hierarchy.component_list
+        ) else {
             continue;
         };
 
@@ -140,7 +132,7 @@ fn update_hierarchy_on_foldable_change(
     mut q_foldables: Query<(&HierarchyNode, &mut Foldable), Changed<Foldable>>,
     q_children: Query<&Children>,
     q_name: Query<&Name>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     for (hierarchy_node, mut foldable) in &mut q_foldables {
         if foldable.empty {
@@ -170,18 +162,18 @@ fn update_hierarchy_on_foldable_change(
 fn update_hierarchy_node_style(
     q_hierarchies: Query<(Entity, &HierarchyContainer), Changed<HierarchyContainer>>,
     q_hierarchy_nodes: Query<(Entity, &HierarchyNode)>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     for (entity, hierarchy) in &q_hierarchies {
         for (menu_item, hierarchy_node) in q_hierarchy_nodes
             .iter()
-            .filter(|(_, node)| node.hierarchy == entity)
-        {
+            .filter(|(_, node)| node.hierarchy == entity) {
             let color = match hierarchy.selected {
-                Some(selected) => match hierarchy_node.entity == selected {
-                    true => Color::GRAY,
-                    false => Color::NONE,
-                },
+                Some(selected) =>
+                    match hierarchy_node.entity == selected {
+                        true => Color::Srgba(GRAY),
+                        false => Color::NONE,
+                    }
                 None => Color::NONE,
             };
             commands.style(menu_item).background_color(color);
@@ -193,7 +185,7 @@ fn spawn_hierarchy_level(
     hierarchy: Entity,
     entity: Entity,
     container: &mut UiBuilder<'_, Entity>,
-    q_name: &Query<&Name>,
+    q_name: &Query<&Name>
 ) {
     let name = match q_name.get(entity) {
         Ok(name) => format!("[{:?}] {}", entity, name),
@@ -205,8 +197,8 @@ fn spawn_hierarchy_level(
         .foldable(name, false, false, |foldable| {
             foldable
                 .style()
-                .margin(UiRect::left(Val::Px(10.)))
-                .border(UiRect::left(Val::Px(1.)))
+                .margin(UiRect::left(Val::Px(10.0)))
+                .border(UiRect::left(Val::Px(1.0)))
                 .border_color(Color::rgba(0.98, 0.92, 0.84, 0.25));
         })
         .insert(HierarchyNode { hierarchy, entity });
@@ -253,12 +245,12 @@ pub trait UiHierarchyExt {
 impl UiHierarchyExt for UiBuilder<'_, Entity> {
     fn hierarchy_for(&mut self, root_entity: Entity) -> UiBuilder<Entity> {
         self.column(|column| {
-            column.style().width(Val::Percent(100.));
+            column.style().width(Val::Percent(100.0));
             let main_zone = column
                 .sized_zone(
                     SizedZoneConfig {
-                        size: 70.,
-                        min_size: 200.,
+                        size: 70.0,
+                        min_size: 200.0,
                     },
                     |zone| {
                         let hierarchy_id = zone.id();
@@ -271,19 +263,19 @@ impl UiHierarchyExt for UiBuilder<'_, Entity> {
                                             name: "Refresh".into(),
                                             trailing_icon: IconData::Image(
                                                 "embedded://sickle_ui/icons/redo_white.png".into(),
-                                                Color::WHITE,
+                                                Color::WHITE
                                             ),
                                             ..default()
                                         })
                                         .style()
-                                        .margin(UiRect::bottom(Val::Px(5.)))
-                                        .width(Val::Percent(100.))
+                                        .margin(UiRect::bottom(Val::Px(5.0)))
+                                        .width(Val::Percent(100.0))
                                         .id();
                                 })
                                 .style()
-                                .border(UiRect::bottom(Val::Px(1.)))
-                                .margin(UiRect::bottom(Val::Px(10.)))
-                                .border_color(Color::ANTIQUE_WHITE);
+                                .border(UiRect::bottom(Val::Px(1.0)))
+                                .margin(UiRect::bottom(Val::Px(10.0)))
+                                .border_color(Color::Srgba(ANTIQUE_WHITE));
 
                             panel.scroll_view(None, |scroll_view| {
                                 let node_container = scroll_view
@@ -293,37 +285,41 @@ impl UiHierarchyExt for UiBuilder<'_, Entity> {
                                     })
                                     .id();
 
-                                scroll_view.commands().entity(refresh_button).insert(
-                                    RefreshHierarchyButton {
+                                scroll_view
+                                    .commands()
+                                    .entity(refresh_button)
+                                    .insert(RefreshHierarchyButton {
                                         hierarchy: hierarchy_id,
                                         container: node_container,
-                                    },
-                                );
+                                    });
                             });
                         });
-                    },
+                    }
                 )
                 .id();
 
             let mut component_list = Entity::PLACEHOLDER;
             column.sized_zone(
                 SizedZoneConfig {
-                    size: 25.,
+                    size: 25.0,
                     ..default()
                 },
                 |zone| {
                     component_list = zone.entity_component_list(None).id();
-                },
+                }
             );
 
-            column.commands().ui_builder(main_zone).insert((
-                Name::new(format!("Hierarchy of [{:?}]", root_entity)),
-                HierarchyContainer {
-                    root: root_entity,
-                    selected: None,
-                    component_list,
-                },
-            ));
+            column
+                .commands()
+                .ui_builder(main_zone)
+                .insert((
+                    Name::new(format!("Hierarchy of [{:?}]", root_entity)),
+                    HierarchyContainer {
+                        root: root_entity,
+                        selected: None,
+                        component_list,
+                    },
+                ));
         })
     }
 }

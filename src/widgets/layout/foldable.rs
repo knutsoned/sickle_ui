@@ -1,32 +1,23 @@
-use bevy::{prelude::*, ui::FocusPolicy};
+use bevy::{ prelude::*, ui::FocusPolicy };
 
 use sickle_ui_scaffold::prelude::*;
 
-use crate::widgets::{menus::menu_item::MenuItemUpdate, WidgetLibraryUpdate};
+use crate::widgets::{ menus::menu_item::MenuItemUpdate, WidgetLibraryUpdate };
 
-use super::{
-    container::UiContainerExt,
-    label::{LabelConfig, UiLabelExt},
-    panel::UiPanelExt,
-};
+use super::{ container::UiContainerExt, label::{ LabelConfig, UiLabelExt }, panel::UiPanelExt };
 
 pub struct FoldablePlugin;
 
 impl Plugin for FoldablePlugin {
     fn build(&self, app: &mut App) {
-        app.configure_sets(
-            Update,
-            FoldableUpdate
-                .after(MenuItemUpdate)
-                .before(WidgetLibraryUpdate),
-        )
-        .add_plugins(ComponentThemePlugin::<Foldable>::default())
-        .add_systems(
-            Update,
-            (handle_foldable_button_press, update_foldable_container)
-                .chain()
-                .in_set(FoldableUpdate),
-        );
+        app.configure_sets(Update, FoldableUpdate.after(MenuItemUpdate).before(WidgetLibraryUpdate))
+            .add_plugins(ComponentThemePlugin::<Foldable>::default())
+            .add_systems(
+                Update,
+                (handle_foldable_button_press, update_foldable_container)
+                    .chain()
+                    .in_set(FoldableUpdate)
+            );
     }
 }
 
@@ -34,7 +25,7 @@ impl Plugin for FoldablePlugin {
 pub struct FoldableUpdate;
 
 fn handle_foldable_button_press(
-    mut q_foldables: Query<(&mut Foldable, &FluxInteraction), Changed<FluxInteraction>>,
+    mut q_foldables: Query<(&mut Foldable, &FluxInteraction), Changed<FluxInteraction>>
 ) {
     for (mut foldable, interaction) in &mut q_foldables {
         if interaction.is_released() {
@@ -48,7 +39,7 @@ fn handle_foldable_button_press(
 
 fn update_foldable_container(
     q_foldables: Query<(Entity, &Foldable), Changed<Foldable>>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     for (entity, foldable) in &q_foldables {
         if foldable.empty {
@@ -59,19 +50,13 @@ fn update_foldable_container(
 
             continue;
         } else {
-            commands
-                .entity(entity)
-                .remove_pseudo_state(PseudoState::Empty);
+            commands.entity(entity).remove_pseudo_state(PseudoState::Empty);
         }
 
         if foldable.open {
-            commands
-                .entity(entity)
-                .remove_pseudo_state(PseudoState::Folded);
+            commands.entity(entity).remove_pseudo_state(PseudoState::Folded);
         } else {
-            commands
-                .entity(entity)
-                .add_pseudo_state(PseudoState::Folded);
+            commands.entity(entity).add_pseudo_state(PseudoState::Folded);
         }
     }
 }
@@ -104,20 +89,19 @@ impl UiContext for Foldable {
             Foldable::BUTTON_ICON => Ok(self.icon),
             Foldable::BUTTON_LABEL => Ok(self.label),
             Foldable::CONTAINER => Ok(self.container),
-            _ => Err(format!(
-                "{} doesn't exists for Foldable. Possible contexts: {:?}",
-                target,
-                self.contexts()
-            )),
+            _ =>
+                Err(
+                    format!(
+                        "{} doesn't exists for Foldable. Possible contexts: {:?}",
+                        target,
+                        self.contexts()
+                    )
+                ),
         }
     }
 
     fn contexts(&self) -> Vec<&'static str> {
-        vec![
-            Foldable::BUTTON_ICON,
-            Foldable::BUTTON_LABEL,
-            Foldable::CONTAINER,
-        ]
+        vec![Foldable::BUTTON_ICON, Foldable::BUTTON_LABEL, Foldable::CONTAINER]
     }
 }
 
@@ -143,19 +127,14 @@ impl Foldable {
     fn primary_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
         let theme_spacing = theme_data.spacing;
         let colors = theme_data.colors();
-        let font = theme_data
-            .text
-            .get(FontStyle::Body, FontScale::Medium, FontType::Regular);
+        let font = theme_data.text.get(FontStyle::Body, FontScale::Medium, FontType::Regular);
 
         style_builder
             .switch_target(Foldable::BUTTON_ICON)
             .size(Val::Px(theme_spacing.icons.small))
             .margin(UiRect::all(Val::Px(theme_spacing.gaps.small)))
             .icon(
-                theme_data
-                    .icons
-                    .expand_more
-                    .with(colors.on(On::Surface), theme_spacing.icons.small),
+                theme_data.icons.expand_more.with(colors.on(On::Surface), theme_spacing.icons.small)
             )
             .animated()
             .font_color(AnimatedVals {
@@ -180,7 +159,7 @@ impl Foldable {
         style_builder
             .switch_target(Foldable::CONTAINER)
             .height(Val::Auto)
-            .flex_shrink(0.)
+            .flex_shrink(0.0)
             .display(Display::Flex)
             .visibility(Visibility::Inherited);
     }
@@ -189,12 +168,14 @@ impl Foldable {
         let theme_spacing = theme_data.spacing;
         let colors = theme_data.colors();
 
-        style_builder.switch_target(Foldable::BUTTON_ICON).icon(
-            theme_data
-                .icons
-                .chevron_right
-                .with(colors.on(On::Surface), theme_spacing.icons.small),
-        );
+        style_builder
+            .switch_target(Foldable::BUTTON_ICON)
+            .icon(
+                theme_data.icons.chevron_right.with(
+                    colors.on(On::Surface),
+                    theme_spacing.icons.small
+                )
+            );
 
         style_builder
             .switch_target(Foldable::CONTAINER)
@@ -206,12 +187,11 @@ impl Foldable {
         let theme_spacing = theme_data.spacing;
         let colors = theme_data.colors();
 
-        style_builder.switch_target(Foldable::BUTTON_ICON).icon(
-            theme_data
-                .icons
-                .arrow_right
-                .with(colors.on(On::Surface), theme_spacing.icons.small),
-        );
+        style_builder
+            .switch_target(Foldable::BUTTON_ICON)
+            .icon(
+                theme_data.icons.arrow_right.with(colors.on(On::Surface), theme_spacing.icons.small)
+            );
 
         style_builder
             .switch_target(Foldable::CONTAINER)
@@ -227,7 +207,9 @@ impl Foldable {
         (
             Name::new(format!("Foldable [{}] - Button", name)),
             ButtonBundle {
+                /* knutsoned - this is no longer a field of ButtonBundle
                 background_color: Color::NONE.into(),
+                */
                 focus_policy: FocusPolicy::Pass,
                 ..default()
             },
@@ -246,13 +228,13 @@ pub trait UiFoldableExt {
         name: impl Into<String>,
         open: bool,
         empty: bool,
-        spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
+        spawn_children: impl FnOnce(&mut UiBuilder<Entity>)
     ) -> UiBuilder<Entity>;
 }
 
 impl UiFoldableExt for UiBuilder<'_, Entity> {
     /// A simple foldable panel.
-    /// 
+    ///
     /// ### PseudoState usage
     /// - `PseudoState::Folded` is used when the panel is folded
     /// - `PseudoState::Empty` is used when the folded panel is set to be empty. This is used for styling its icon
@@ -261,7 +243,7 @@ impl UiFoldableExt for UiBuilder<'_, Entity> {
         name: impl Into<String>,
         open: bool,
         empty: bool,
-        spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
+        spawn_children: impl FnOnce(&mut UiBuilder<Entity>)
     ) -> UiBuilder<Entity> {
         let name = name.into();
 
@@ -286,9 +268,7 @@ impl UiFoldableExt for UiBuilder<'_, Entity> {
         foldable.container = self.panel(name, spawn_children).id();
         if !open {
             self.commands().style(foldable.container).hide();
-            self.commands()
-                .entity(button)
-                .add_pseudo_state(PseudoState::Folded);
+            self.commands().entity(button).add_pseudo_state(PseudoState::Folded);
         }
 
         self.commands().entity(button).insert(foldable);

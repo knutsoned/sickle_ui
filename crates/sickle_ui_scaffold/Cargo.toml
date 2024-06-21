@@ -12,6 +12,6 @@ dev = ["bevy/dynamic_linking"]
 sickle_math = { path = "../sickle_math" }
 sickle_macros = { path = "../sickle_macros" }
 
-bevy = { version = "0.13" }
-bevy_reflect = { version = "0.13" }
+bevy = { git = "https://github.com/pcwalton/bevy.git", branch = "brp", version = "0.14.0-dev" }
+#bevy_reflect = { version = "0.13" }
 serde = { version = "1.0", features = ["derive"] }

@@ -1,12 +1,12 @@
 //! An example using the widget library to test docking zones and zone splits.
-use bevy::prelude::*;
+use bevy::{ color::palettes::css::*, prelude::* };
 
 use sickle_math::ease::Ease;
 use sickle_ui::{
-    dev_panels::hierarchy::{HierarchyTreeViewPlugin, UiHierarchyExt},
-    flux_interaction::{FluxInteraction, FluxInteractionUpdate},
+    dev_panels::hierarchy::{ HierarchyTreeViewPlugin, UiHierarchyExt },
+    flux_interaction::{ FluxInteraction, FluxInteractionUpdate },
     theme::prelude::*,
-    ui_builder::{UiBuilder, UiBuilderExt, UiContextRoot, UiRoot},
+    ui_builder::{ UiBuilder, UiBuilderExt, UiContextRoot, UiRoot },
     ui_style::prelude::*,
     widgets::prelude::*,
     SickleUiPlugin,
@@ -14,14 +14,16 @@ use sickle_ui::{
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                title: "Sickle UI - Docking Zone Splits".into(),
-                resolution: (1280., 720.).into(),
+        .add_plugins(
+            DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: "Sickle UI - Docking Zone Splits".into(),
+                    resolution: (1280.0, 720.0).into(),
+                    ..default()
+                }),
                 ..default()
-            }),
-            ..default()
-        }))
+            })
+        )
         .add_plugins(SickleUiPlugin)
         .init_resource::<IconCache>()
         .add_plugins(HierarchyTreeViewPlugin)
@@ -33,8 +35,7 @@ fn main() {
                 update_theme_data_on_press,
                 update_test_pseudo_state_on_press,
                 log_on_dynamic_style_enter_change,
-            )
-                .after(FluxInteractionUpdate),
+            ).after(FluxInteractionUpdate)
         )
         .run();
 }
@@ -83,47 +84,40 @@ impl ThemeTestBox {
     fn base_theme() -> Theme<ThemeTestBox> {
         let base_style = PseudoTheme::deferred(None, |base_style, _| {
             base_style
-                .border(UiRect::all(Val::Px(2.)))
+                .border(UiRect::all(Val::Px(2.0)))
                 .background_color(Color::BLACK)
-                .width(Val::Px(100.))
-                .height(Val::Px(100.));
+                .width(Val::Px(100.0))
+                .height(Val::Px(100.0));
 
             base_style
                 .interactive()
-                .border_color(InteractiveVals::new(Color::DARK_GRAY).hover(Color::BEIGE));
+                .border_color(
+                    InteractiveVals::new(Color::Srgba(DARK_GRAY)).hover(Color::Srgba(BEIGE))
+                );
 
-            base_style
-                .switch_target(TEST_CONTEXT)
-                .background_color(Color::BLACK);
+            base_style.switch_target(TEST_CONTEXT).background_color(Color::BLACK);
         });
 
         let checked_style = PseudoTheme::build(vec![PseudoState::Checked], |checked_style| {
-            checked_style.background_color(Color::GRAY);
+            checked_style.background_color(Color::Srgba(GRAY));
         });
 
         let checked_empty_style = PseudoTheme::build(
             vec![PseudoState::Checked, PseudoState::Empty],
             |checked_empty_style| {
-                checked_empty_style.background_color(Color::SEA_GREEN);
-            },
+                checked_empty_style.background_color(Color::Srgba(SEA_GREEN));
+            }
         );
         let checked_empty_selected_style = PseudoTheme::build(
-            vec![
-                PseudoState::Checked,
-                PseudoState::Empty,
-                PseudoState::Selected,
-            ],
+            vec![PseudoState::Checked, PseudoState::Empty, PseudoState::Selected],
             |checked_empty_selected_style| {
-                checked_empty_selected_style.background_color(Color::RED);
-            },
+                checked_empty_selected_style.background_color(Color::Srgba(RED));
+            }
         );
 
-        Theme::new(vec![
-            base_style,
-            checked_style,
-            checked_empty_style,
-            checked_empty_selected_style,
-        ])
+        Theme::new(
+            vec![base_style, checked_style, checked_empty_style, checked_empty_selected_style]
+        )
     }
 
     fn override_theme() -> Theme<ThemeTestBox> {
@@ -137,30 +131,30 @@ impl ThemeTestBox {
             Ease::InOutExpo,
             0.3,
             0.1,
-            AnimationLoop::PingPongContinous,
+            AnimationLoop::PingPongContinous
         );
         let idle = LoopedAnimationConfig::new(
             0.3,
             Ease::InOutExpo,
             0.3,
             0.1,
-            AnimationLoop::Times(3, true),
+            AnimationLoop::Times(3, true)
         );
         let color_bundle = AnimatedVals {
             idle: data.colors().background,
-            hover: Color::rgb(0.5, 0.5, 1.).into(),
-            press: Color::GREEN.into(),
-            cancel: Color::RED.into(),
-            hover_alt: Color::GOLD.into(),
-            idle_alt: Color::rgb(0.5, 0.5, 1.).into(),
-            press_alt: Color::rgb(0.5, 1., 0.5).into(),
+            hover: Color::rgb(0.5, 0.5, 1.0).into(),
+            press: Color::Srgba(GREEN).into(),
+            cancel: Color::Srgba(RED).into(),
+            hover_alt: Color::Srgba(GOLD).into(),
+            idle_alt: Color::rgb(0.5, 0.5, 1.0).into(),
+            press_alt: Color::rgb(0.5, 1.0, 0.5).into(),
             enter_from: Color::WHITE.into(),
             ..default()
         };
 
         let mut style_animation = AnimationSettings::new();
         style_animation
-            .enter(1.0, Ease::Linear, 0.)
+            .enter(1.0, Ease::Linear, 0.0)
             .pointer_enter(0.3, Ease::Linear, 0.5)
             .pointer_leave(0.3, Ease::Linear, 0.5)
             .press(0.3, None, None)
@@ -170,23 +164,22 @@ impl ThemeTestBox {
             .hover(0.3, Ease::InOutExpo, 0.3, 0.1, AnimationLoop::PingPong(3))
             .pressed_from(pressed);
 
-        builder.border_color(Color::ALICE_BLUE);
+        builder.border_color(Color::Srgba(ALICE_BLUE));
 
-        builder
-            .animated()
-            .background_color(color_bundle)
-            .copy_from(style_animation);
+        builder.animated().background_color(color_bundle).copy_from(style_animation);
 
         builder
             .switch_target(TEST_CONTEXT)
             .interactive()
-            .background_color(InteractiveVals::new(Color::DARK_GRAY).hover(Color::BEIGE));
+            .background_color(
+                InteractiveVals::new(Color::Srgba(DARK_GRAY)).hover(Color::Srgba(BEIGE))
+            );
     }
 }
 
 fn update_theme_data_on_press(
     q_test_boxes: Query<&Interaction, (With<ThemeTestBoxToggle>, Changed<Interaction>)>,
-    mut theme_data: ResMut<ThemeData>,
+    mut theme_data: ResMut<ThemeData>
 ) {
     for interaction in &q_test_boxes {
         if *interaction == Interaction::Pressed {
@@ -202,9 +195,9 @@ fn update_theme_data_on_press(
 fn update_test_pseudo_state_on_press(
     mut q_test_boxes: Query<
         (Entity, &FluxInteraction, Option<&mut PseudoStates>),
-        (With<ThemeTestBox>, Changed<FluxInteraction>),
+        (With<ThemeTestBox>, Changed<FluxInteraction>)
     >,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     for (entity, interaction, pseudo_states) in &mut q_test_boxes {
         if interaction.is_released() {
@@ -212,14 +205,15 @@ fn update_test_pseudo_state_on_press(
                 match pseudo_states.get().len() {
                     0 => pseudo_states.add(PseudoState::Checked),
                     1 => pseudo_states.add(PseudoState::Empty),
-                    2 => match pseudo_states.has(&PseudoState::Empty) {
-                        true => {
-                            pseudo_states.add(PseudoState::Selected);
+                    2 =>
+                        match pseudo_states.has(&PseudoState::Empty) {
+                            true => {
+                                pseudo_states.add(PseudoState::Selected);
+                            }
+                            false => {
+                                commands.entity(entity).remove::<PseudoStates>();
+                            }
                         }
-                        false => {
-                            commands.entity(entity).remove::<PseudoStates>();
-                        }
-                    },
                     3 => {
                         pseudo_states.remove(PseudoState::Empty);
                     }
@@ -236,8 +230,8 @@ fn update_test_pseudo_state_on_press(
 fn log_on_dynamic_style_enter_change(
     q_test_boxes: Query<
         &DynamicStyleEnterState,
-        (With<ThemeTestBox>, Changed<DynamicStyleEnterState>),
-    >,
+        (With<ThemeTestBox>, Changed<DynamicStyleEnterState>)
+    >
 ) {
     for state in &q_test_boxes {
         info!("Enter state changed to: {:?}", state.completed());
@@ -247,7 +241,7 @@ fn log_on_dynamic_style_enter_change(
 fn setup(
     asset_server: Res<AssetServer>,
     mut icon_cache: ResMut<IconCache>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     // Workaround for disappearing icons when they are despawned and spawned back in during the same frame
     // Should be fixed in Bevy > 0.13
@@ -261,7 +255,7 @@ fn setup(
         "embedded://sickle_ui/icons/exit_white.png",
         "embedded://sickle_ui/icons/popout_white.png",
         "embedded://sickle_ui/icons/redo_white.png",
-        "embedded://sickle_ui/icons/submenu_white.png",
+        "embedded://sickle_ui/icons/submenu_white.png"
     ];
 
     for icon in icons_to_cache.iter() {
@@ -277,8 +271,10 @@ fn setup(
                     clear_color: Color::BLACK.into(),
                     ..default()
                 },
-                transform: Transform::from_translation(Vec3::new(0., 30., 0.))
-                    .looking_at(Vec3::ZERO, Vec3::Y),
+                transform: Transform::from_translation(Vec3::new(0.0, 30.0, 0.0)).looking_at(
+                    Vec3::ZERO,
+                    Vec3::Y
+                ),
                 ..Default::default()
             },
             UiCamera,
@@ -303,54 +299,50 @@ fn setup(
             TargetCamera(main_camera),
         ),
         |container| {
-            container
-                .style()
-                .background_color(Color::rgb(0.7, 0.7, 0.7));
+            container.style().background_color(Color::rgb(0.7, 0.7, 0.7));
 
             container
                 .sized_zone(
                     SizedZoneConfig {
-                        size: 20.,
+                        size: 20.0,
                         ..default()
                     },
                     |column| {
                         hierarchy_container = column.id();
-                    },
+                    }
                 )
                 .style()
-                .border(UiRect::right(Val::Px(4.)))
+                .border(UiRect::right(Val::Px(4.0)))
                 .background_color(Color::rgb(0.15, 0.155, 0.16));
 
             container.sized_zone(
                 SizedZoneConfig {
-                    size: 80.,
+                    size: 80.0,
                     ..default()
                 },
                 |main_content| {
                     root_entity = main_content.insert(UiContextRoot).style().id();
 
                     spawn_test_content(main_content);
-                },
+                }
             );
-        },
+        }
     );
 
-    commands
-        .ui_builder(hierarchy_container)
-        .hierarchy_for(root_entity);
+    commands.ui_builder(hierarchy_container).hierarchy_for(root_entity);
 }
 
 fn spawn_test_content(container: &mut UiBuilder<'_, Entity>) {
     container.sized_zone(
         SizedZoneConfig {
-            size: 10.,
+            size: 10.0,
             ..default()
         },
         |sized_zone| {
             sized_zone
                 .docking_zone(
                     SizedZoneConfig {
-                        size: 60.,
+                        size: 60.0,
                         ..default()
                     },
                     false,
@@ -375,15 +367,14 @@ fn spawn_test_content(container: &mut UiBuilder<'_, Entity>) {
                                         id = row_box
                                             .spawn(NodeBundle {
                                                 style: Style {
-                                                    width: Val::Px(50.),
-                                                    height: Val::Px(50.),
+                                                    width: Val::Px(50.0),
+                                                    height: Val::Px(50.0),
                                                     ..default()
                                                 },
                                                 ..default()
                                             })
                                             .id();
-                                    })
-                                    .insert(ThemeTestBox { content: id });
+                                    }).insert(ThemeTestBox { content: id });
 
                                     row.container(
                                         (
@@ -395,25 +386,26 @@ fn spawn_test_content(container: &mut UiBuilder<'_, Entity>) {
                                             id = row_box
                                                 .spawn(NodeBundle {
                                                     style: Style {
-                                                        width: Val::Px(50.),
-                                                        height: Val::Px(50.),
+                                                        width: Val::Px(50.0),
+                                                        height: Val::Px(50.0),
                                                         ..default()
                                                     },
                                                     ..default()
                                                 })
                                                 .id();
-                                        },
-                                    )
-                                    .insert(ThemeTestBox { content: id });
+                                        }
+                                    ).insert(ThemeTestBox { content: id });
 
                                     row.spawn((
                                         ButtonBundle {
                                             style: Style {
-                                                width: Val::Px(100.),
-                                                height: Val::Px(100.),
+                                                width: Val::Px(100.0),
+                                                height: Val::Px(100.0),
                                                 ..default()
                                             },
-                                            background_color: Color::BISQUE.into(),
+                                            /* knutsoned - this is no longer a field of ButtonBundle
+                                            background_color: Color::Srgba(BISQUE).into(),
+                                            */
                                             ..default()
                                         },
                                         ThemeTestBoxToggle,
@@ -421,61 +413,55 @@ fn spawn_test_content(container: &mut UiBuilder<'_, Entity>) {
                                 });
                             });
                         }
-                    },
+                    }
                 )
                 .style()
                 .background_color(Color::rgb(0.3, 0.3, 0.3));
             sized_zone.sized_zone(
                 SizedZoneConfig {
-                    size: 20.,
+                    size: 20.0,
                     ..default()
                 },
                 |sized_zone| {
-                    sized_zone
-                        .style()
-                        .background_color(Color::rgb(0.3, 0.3, 0.3));
-                },
+                    sized_zone.style().background_color(Color::rgb(0.3, 0.3, 0.3));
+                }
             );
             sized_zone.sized_zone(
                 SizedZoneConfig {
-                    size: 20.,
+                    size: 20.0,
                     ..default()
                 },
                 |sized_zone| {
-                    sized_zone
-                        .style()
-                        .background_color(Color::rgb(0.3, 0.3, 0.3));
-                },
+                    sized_zone.style().background_color(Color::rgb(0.3, 0.3, 0.3));
+                }
             );
-        },
+        }
     );
     container.sized_zone(
         SizedZoneConfig {
-            size: 80.,
+            size: 80.0,
             ..default()
         },
         |sized_zone| {
             sized_zone.sized_zone(
                 SizedZoneConfig {
-                    size: 10.,
+                    size: 10.0,
                     ..default()
                 },
                 |sized_zone| {
-                    sized_zone
-                        .style()
-                        .background_color(Color::rgb(0.5, 0.5, 0.5));
-                },
+                    sized_zone.style().background_color(Color::rgb(0.5, 0.5, 0.5));
+                }
             );
             sized_zone.docking_zone_split(
                 SizedZoneConfig {
-                    size: 80.,
+                    size: 80.0,
                     ..default()
                 },
                 |zone_split| {
                     zone_split
                         .docking_zone(
                             SizedZoneConfig {
-                                size: 20.,
+                                size: 20.0,
                                 ..default()
                             },
                             true,
@@ -486,14 +472,14 @@ fn spawn_test_content(container: &mut UiBuilder<'_, Entity>) {
                                         ..default()
                                     });
                                 });
-                            },
+                            }
                         )
                         .style()
                         .background_color(Color::rgb(0.5, 0.5, 0.5));
                     zone_split
                         .docking_zone(
                             SizedZoneConfig {
-                                size: 60.,
+                                size: 60.0,
                                 ..default()
                             },
                             false,
@@ -504,14 +490,14 @@ fn spawn_test_content(container: &mut UiBuilder<'_, Entity>) {
                                         ..default()
                                     });
                                 });
-                            },
+                            }
                         )
                         .style()
                         .background_color(Color::rgb(0.5, 0.5, 0.5));
                     zone_split
                         .docking_zone(
                             SizedZoneConfig {
-                                size: 20.,
+                                size: 20.0,
                                 ..default()
                             },
                             true,
@@ -522,53 +508,47 @@ fn spawn_test_content(container: &mut UiBuilder<'_, Entity>) {
                                         ..default()
                                     });
                                 });
-                            },
+                            }
                         )
                         .style()
                         .background_color(Color::rgb(0.5, 0.5, 0.5));
-                },
+                }
             );
             sized_zone.sized_zone(
                 SizedZoneConfig {
-                    size: 10.,
+                    size: 10.0,
                     ..default()
                 },
                 |sized_zone| {
-                    sized_zone
-                        .style()
-                        .background_color(Color::rgb(0.5, 0.5, 0.5));
-                },
+                    sized_zone.style().background_color(Color::rgb(0.5, 0.5, 0.5));
+                }
             );
-        },
+        }
     );
     container.sized_zone(
         SizedZoneConfig {
-            size: 10.,
+            size: 10.0,
             ..default()
         },
         |sized_zone| {
             sized_zone.sized_zone(
                 SizedZoneConfig {
-                    size: 50.,
+                    size: 50.0,
                     ..default()
                 },
                 |sized_zone| {
-                    sized_zone
-                        .style()
-                        .background_color(Color::rgb(0.7, 0.7, 0.7));
-                },
+                    sized_zone.style().background_color(Color::rgb(0.7, 0.7, 0.7));
+                }
             );
             sized_zone.sized_zone(
                 SizedZoneConfig {
-                    size: 50.,
+                    size: 50.0,
                     ..default()
                 },
                 |sized_zone| {
-                    sized_zone
-                        .style()
-                        .background_color(Color::rgb(0.7, 0.7, 0.7));
-                },
+                    sized_zone.style().background_color(Color::rgb(0.7, 0.7, 0.7));
+                }
             );
-        },
+        }
     );
 }

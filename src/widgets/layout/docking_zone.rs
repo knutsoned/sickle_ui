@@ -1,21 +1,24 @@
 use bevy::{
-    ecs::system::{Command, CommandQueue},
+    ecs::world::{ Command, CommandQueue },
     prelude::*,
-    ui::{FocusPolicy, RelativeCursorPosition},
+    ui::{ FocusPolicy, RelativeCursorPosition },
 };
 
 use sickle_macros::UiContext;
-use sickle_ui_scaffold::{prelude::*, ui_commands::ResetChildrenInUiSurface};
+use sickle_ui_scaffold::{ prelude::*, ui_commands::ResetChildrenInUiSurface };
 
 use crate::hierarchy_delay::DelayActions;
 
 use super::{
     floating_panel::FloatingPanelTitle,
     sized_zone::{
-        SizedZone, SizedZoneConfig, SizedZonePreUpdate, SizedZoneResizeHandleContainer,
+        SizedZone,
+        SizedZoneConfig,
+        SizedZonePreUpdate,
+        SizedZoneResizeHandleContainer,
         UiSizedZoneExt,
     },
-    tab_container::{TabBar, TabContainer, UiTabContainerExt, UiTabContainerSubExt},
+    tab_container::{ TabBar, TabContainer, UiTabContainerExt, UiTabContainerSubExt },
 };
 
 pub struct DockingZonePlugin;
@@ -39,15 +42,13 @@ impl Plugin for DockingZonePlugin {
                         .run_if(should_cleanup_lingering_docking_zone_splits),
                 )
                     .chain()
-                    .after(SizedZonePreUpdate),
+                    .after(SizedZonePreUpdate)
             )
             .add_systems(
                 Update,
-                (
-                    update_docking_zone_resize_handles,
-                    handle_docking_zone_drop_zone_change,
+                (update_docking_zone_resize_handles, handle_docking_zone_drop_zone_change).in_set(
+                    DockingZoneUpdate
                 )
-                    .in_set(DockingZoneUpdate),
             );
     }
 }
@@ -58,7 +59,7 @@ pub struct DockingZoneUpdate;
 fn cleanup_empty_docking_zones(
     q_tab_containers: Query<(&TabContainer, &RemoveEmptyDockingZone), Changed<TabContainer>>,
     q_parent: Query<&Parent>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     for (tab_container, zone_ref) in &q_tab_containers {
         if tab_container.tab_count() > 0 {
@@ -66,10 +67,7 @@ fn cleanup_empty_docking_zones(
         }
 
         let Ok(parent) = q_parent.get(zone_ref.zone) else {
-            warn!(
-                "Invalid docking zone detected: Zone {:?} doesn't have a Parent!",
-                zone_ref.zone
-            );
+            warn!("Invalid docking zone detected: Zone {:?} doesn't have a Parent!", zone_ref.zone);
             commands.entity(zone_ref.zone).despawn_recursive();
             continue;
         };
@@ -84,7 +82,7 @@ fn cleanup_empty_docking_zones(
 }
 
 fn should_cleanup_lingering_docking_zone_splits(
-    q_zone_splits: Query<Entity, (With<DockingZoneSplitContainer>, Changed<Children>)>,
+    q_zone_splits: Query<Entity, (With<DockingZoneSplitContainer>, Changed<Children>)>
 ) -> bool {
     // A split should be removed if:
     // - it has no sized zone child (custom content is removed, it is not supported in DockingZoneSplitContainer)
@@ -115,7 +113,7 @@ fn cleanup_empty_docking_zone_splits(
     q_parent: Query<&Parent>,
     q_children: Query<&Children>,
     mut q_sized_zone: Query<&mut SizedZone>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     // Find zones that have no sized zone children (custom content is removed, it is not supported in DockingZoneSplitContainer)
     //   - spread size equally among sized zone siblings
@@ -125,10 +123,7 @@ fn cleanup_empty_docking_zone_splits(
     //     - [UnsupportedAdditionalContent]
     // - any chain of empty splits should be removed
     for (zone_split_id, children) in &q_zone_splits {
-        if children
-            .iter()
-            .any(|child| q_sized_zone.get(*child).is_ok())
-        {
+        if children.iter().any(|child| q_sized_zone.get(*child).is_ok()) {
             // This is NOT an empty (leaf) split, walk up the tree until one has other branches
             continue;
         }
@@ -179,7 +174,7 @@ fn cleanup_empty_docking_zone_splits(
                 unreachable!();
             };
 
-            let sibling_portion = split_size / topmost_sibling_count as f32;
+            let sibling_portion = split_size / (topmost_sibling_count as f32);
             for sibling in siblings {
                 if *sibling == topmost_empty_split {
                     continue;
@@ -202,13 +197,13 @@ fn cleanup_empty_docking_zone_splits(
 fn cleanup_shell_docking_zone_splits(
     q_zone_splits: Query<
         (Entity, &Children, &Parent),
-        (With<DockingZoneSplitContainer>, With<SizedZone>),
+        (With<DockingZoneSplitContainer>, With<SizedZone>)
     >,
     q_zone_split: Query<&DockingZoneSplitContainer, With<SizedZone>>,
     q_parent: Query<&Parent>,
     q_children: Query<&Children>,
     mut q_sized_zone: Query<&mut SizedZone>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     // Find zone splits that are a child of a split and have more than one sized zone children and no sized zone siblings
     //   - update the child's size to the parent's
@@ -249,23 +244,18 @@ fn cleanup_shell_docking_zone_splits(
         };
         let second_parent_id = second_parent.get();
 
-        if !children
-            .iter()
-            .any(|child| q_sized_zone.get(*child).is_ok())
-        {
+        if !children.iter().any(|child| q_sized_zone.get(*child).is_ok()) {
             // Zone split has no sized zone children, it shouldn't be here!
-            warn!(
-                "Empty docking zone split {:?} detected after cleanup",
-                zone_split_id
-            );
+            warn!("Empty docking zone split {:?} detected after cleanup", zone_split_id);
             continue;
         }
 
         // Safe unwrap, parent must have at least the current zone
         let siblings = q_children.get(parent_id).unwrap();
-        if siblings
-            .iter()
-            .any(|sibling| *sibling != zone_split_id && q_sized_zone.get(*sibling).is_ok())
+        if
+            siblings
+                .iter()
+                .any(|sibling| *sibling != zone_split_id && q_sized_zone.get(*sibling).is_ok())
         {
             // Split has sized zone siblings, keep the parent
             continue;
@@ -278,7 +268,7 @@ fn cleanup_shell_docking_zone_splits(
         // The parent zone's size needs to be redistributed to the moved children
         // Safe unwarp: already checked that parent is a docking zone split with a sized zone
         let sized_zone = q_sized_zone.get(parent_id).unwrap();
-        let split_size_ratio = sized_zone.size() / 100.;
+        let split_size_ratio = sized_zone.size() / 100.0;
         let mut children_to_move: Vec<Entity> = Vec::with_capacity(children.len());
         for child in children {
             let Ok(mut sized_zone) = q_sized_zone.get_mut(*child) else {
@@ -301,27 +291,23 @@ fn cleanup_shell_docking_zone_splits(
             .unwrap();
 
         // Move sized zones to outer (second) parent
-        commands
-            .entity(second_parent_id)
-            .insert_children(insert_index, &children_to_move);
+        commands.entity(second_parent_id).insert_children(insert_index, &children_to_move);
         // Remove parent, along with the current split
         commands.entity(parent_id).despawn_recursive();
         // Refresh outer parent's children in taffy to avoid panics
-        commands
-            .entity(second_parent_id)
-            .add(ResetChildrenInUiSurface);
+        commands.entity(second_parent_id).add(ResetChildrenInUiSurface);
     }
 }
 
 fn cleanup_leftover_docking_zone_splits(
     q_zone_splits: Query<
         (Entity, &Children, &Parent),
-        (With<DockingZoneSplitContainer>, With<SizedZone>),
+        (With<DockingZoneSplitContainer>, With<SizedZone>)
     >,
     q_docking_zone: Query<&DockingZone, With<SizedZone>>,
     q_children: Query<&Children>,
     mut q_sized_zone: Query<&mut SizedZone>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     // This is a special case when a DockingZone is the sole remaining child of a docking zone split.
     // The DockingZone cannot have a SizedZone as a direct descedant (not supported), so the direction change can be cleaned up.
@@ -332,16 +318,15 @@ fn cleanup_leftover_docking_zone_splits(
     //     - [SizedZoneResizeHandleContainer]
     // - Make sure to check if there are no other sized zones in the split before moving docking zone up
     for (zone_split_id, zone_split_children, zone_split_parent) in &q_zone_splits {
-        if zone_split_children
-            .iter()
-            .filter(|child| q_sized_zone.get(**child).is_ok())
-            .count()
-            == 1
-            && zone_split_children
+        if
+            zone_split_children
+                .iter()
+                .filter(|child| q_sized_zone.get(**child).is_ok())
+                .count() == 1 &&
+            zone_split_children
                 .iter()
                 .filter(|child| q_docking_zone.get(**child).is_ok())
-                .count()
-                == 1
+                .count() == 1
         {
             // Safe unwrap: checked in *if*
             let docking_zone_id = *zone_split_children
@@ -373,9 +358,7 @@ fn cleanup_leftover_docking_zone_splits(
             // Remove split zone
             commands.entity(zone_split_id).despawn_recursive();
             // Refresh parent's children in taffy to avoid panics
-            commands
-                .entity(zone_split_parent_id)
-                .add(ResetChildrenInUiSurface);
+            commands.entity(zone_split_parent_id).add(ResetChildrenInUiSurface);
         }
     }
 }
@@ -384,18 +367,17 @@ fn cleanup_leftover_docking_zone_splits(
 fn update_docking_zone_resize_handles(
     q_accepted_types: Query<&Draggable, (With<FloatingPanelTitle>, Changed<Draggable>)>,
     q_handle_containers: Query<Entity, With<SizedZoneResizeHandleContainer>>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
-    if q_accepted_types
-        .iter()
-        .all(|draggable| draggable.state == DragState::Inactive)
-    {
+    if q_accepted_types.iter().all(|draggable| draggable.state == DragState::Inactive) {
         return;
     }
 
-    let dragging = q_accepted_types.iter().any(|draggable| {
-        draggable.state == DragState::DragStart || draggable.state == DragState::Dragging
-    });
+    let dragging = q_accepted_types
+        .iter()
+        .any(|draggable| {
+            draggable.state == DragState::DragStart || draggable.state == DragState::Dragging
+        });
 
     for container in &q_handle_containers {
         commands.style(container).render(!dragging);
@@ -405,12 +387,12 @@ fn update_docking_zone_resize_handles(
 fn handle_docking_zone_drop_zone_change(
     q_docking_zones: Query<
         (Entity, &DockingZone, &DropZone, &Node, &GlobalTransform),
-        Changed<DropZone>,
+        Changed<DropZone>
     >,
     q_accepted_query: Query<&FloatingPanelTitle>,
     q_tab_container: Query<&TabContainer>,
     q_tab_bar: Query<(&Node, &Interaction), With<TabBar>>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     for (entity, docking_zone, drop_zone, node, transform) in &q_docking_zones {
         let Ok(tab_container) = q_tab_container.get(docking_zone.tab_container) else {
@@ -419,28 +401,22 @@ fn handle_docking_zone_drop_zone_change(
         };
 
         let Ok((tab_bar_node, bar_interaction)) = q_tab_bar.get(tab_container.bar_id()) else {
-            warn!(
-                "Tab container {:?} missing its tab bar!",
-                docking_zone.tab_container
-            );
+            warn!("Tab container {:?} missing its tab bar!", docking_zone.tab_container);
             continue;
         };
 
         let center = transform.translation().truncate();
         let tab_bar_height = tab_bar_node.size().y;
 
-        if *bar_interaction == Interaction::Hovered
-            || drop_zone.drop_phase() == DropPhase::Inactive
-            || drop_zone.drop_phase() == DropPhase::DropCanceled
-            || drop_zone.drop_phase() == DropPhase::DroppableLeft
-            || drop_zone.incoming_droppable().is_none()
-            || q_accepted_query
-                .get(drop_zone.incoming_droppable().unwrap())
-                .is_err()
+        if
+            *bar_interaction == Interaction::Hovered ||
+            drop_zone.drop_phase() == DropPhase::Inactive ||
+            drop_zone.drop_phase() == DropPhase::DropCanceled ||
+            drop_zone.drop_phase() == DropPhase::DroppableLeft ||
+            drop_zone.incoming_droppable().is_none() ||
+            q_accepted_query.get(drop_zone.incoming_droppable().unwrap()).is_err()
         {
-            commands
-                .style_unchecked(docking_zone.zone_highlight)
-                .visibility(Visibility::Hidden);
+            commands.style_unchecked(docking_zone.zone_highlight).visibility(Visibility::Hidden);
 
             continue;
         }
@@ -449,20 +425,22 @@ fn handle_docking_zone_drop_zone_change(
         let position = drop_zone.position().unwrap();
         let drop_area = calculate_drop_area(position, center, node.size());
 
-        if drop_zone.drop_phase() == DropPhase::DroppableEntered
-            || drop_zone.drop_phase() == DropPhase::DroppableHover
+        if
+            drop_zone.drop_phase() == DropPhase::DroppableEntered ||
+            drop_zone.drop_phase() == DropPhase::DroppableHover
         {
-            let full_size = Val::Percent(100.);
-            let half_size = Val::Percent(50.);
+            let full_size = Val::Percent(100.0);
+            let half_size = Val::Percent(50.0);
             let auto_size = Val::Auto;
 
             let (width, height, top, left) = match drop_area {
-                DropArea::Center => (
-                    full_size,
-                    Val::Px(node.size().y - tab_bar_height),
-                    Val::Px(tab_bar_height),
-                    auto_size,
-                ),
+                DropArea::Center =>
+                    (
+                        full_size,
+                        Val::Px(node.size().y - tab_bar_height),
+                        Val::Px(tab_bar_height),
+                        auto_size,
+                    ),
                 DropArea::North => (full_size, half_size, auto_size, auto_size),
                 DropArea::East => (half_size, full_size, auto_size, half_size),
                 DropArea::South => (full_size, half_size, half_size, auto_size),
@@ -503,16 +481,14 @@ fn handle_docking_zone_drop_zone_change(
                 });
             }
 
-            commands
-                .style_unchecked(docking_zone.zone_highlight)
-                .visibility(Visibility::Hidden);
+            commands.style_unchecked(docking_zone.zone_highlight).visibility(Visibility::Hidden);
         }
     }
 }
 
 fn calculate_drop_area(position: Vec2, center: Vec2, size: Vec2) -> DropArea {
-    let sixth_width = size.x / 6.;
-    let sixth_height = size.y / 6.;
+    let sixth_width = size.x / 6.0;
+    let sixth_height = size.y / 6.0;
 
     if position.x < center.x - sixth_width {
         DropArea::West
@@ -545,8 +521,7 @@ impl Command for DockingZoneSplit {
     fn apply(self, world: &mut World) {
         let Ok((docking_zone, parent, sized_zone)) = world
             .query::<(&DockingZone, &Parent, &SizedZone)>()
-            .get(world, self.docking_zone)
-        else {
+            .get(world, self.docking_zone) else {
             error!(
                 "Tried to split entity {:?} when it isn't a valid DockingZone!",
                 self.docking_zone
@@ -563,7 +538,8 @@ impl Command for DockingZoneSplit {
         let Some(_) = world.get::<TabContainer>(tab_container_id) else {
             error!(
                 "Tab container {:?} missing from docking zone {:?}",
-                tab_container_id, self.docking_zone
+                tab_container_id,
+                self.docking_zone
             );
             return;
         };
@@ -577,40 +553,40 @@ impl Command for DockingZoneSplit {
             .unwrap();
 
         let (inject_container, sibling_before) = match current_direction {
-            FlexDirection::Row => match self.direction {
-                DockingZoneSplitDirection::VerticallyBefore => (false, true),
-                DockingZoneSplitDirection::VerticallyAfter => (false, false),
-                DockingZoneSplitDirection::HorizontallyBefore => (true, true),
-                DockingZoneSplitDirection::HorizontallyAfter => (true, false),
-            },
-            FlexDirection::Column => match self.direction {
-                DockingZoneSplitDirection::VerticallyBefore => (true, true),
-                DockingZoneSplitDirection::VerticallyAfter => (true, false),
-                DockingZoneSplitDirection::HorizontallyBefore => (false, true),
-                DockingZoneSplitDirection::HorizontallyAfter => (false, false),
-            },
-            FlexDirection::RowReverse => match self.direction {
-                DockingZoneSplitDirection::VerticallyBefore => (false, false),
-                DockingZoneSplitDirection::VerticallyAfter => (false, true),
-                DockingZoneSplitDirection::HorizontallyBefore => (true, false),
-                DockingZoneSplitDirection::HorizontallyAfter => (true, true),
-            },
-            FlexDirection::ColumnReverse => match self.direction {
-                DockingZoneSplitDirection::VerticallyBefore => (true, false),
-                DockingZoneSplitDirection::VerticallyAfter => (true, true),
-                DockingZoneSplitDirection::HorizontallyBefore => (false, false),
-                DockingZoneSplitDirection::HorizontallyAfter => (false, true),
-            },
+            FlexDirection::Row =>
+                match self.direction {
+                    DockingZoneSplitDirection::VerticallyBefore => (false, true),
+                    DockingZoneSplitDirection::VerticallyAfter => (false, false),
+                    DockingZoneSplitDirection::HorizontallyBefore => (true, true),
+                    DockingZoneSplitDirection::HorizontallyAfter => (true, false),
+                }
+            FlexDirection::Column =>
+                match self.direction {
+                    DockingZoneSplitDirection::VerticallyBefore => (true, true),
+                    DockingZoneSplitDirection::VerticallyAfter => (true, false),
+                    DockingZoneSplitDirection::HorizontallyBefore => (false, true),
+                    DockingZoneSplitDirection::HorizontallyAfter => (false, false),
+                }
+            FlexDirection::RowReverse =>
+                match self.direction {
+                    DockingZoneSplitDirection::VerticallyBefore => (false, false),
+                    DockingZoneSplitDirection::VerticallyAfter => (false, true),
+                    DockingZoneSplitDirection::HorizontallyBefore => (true, false),
+                    DockingZoneSplitDirection::HorizontallyAfter => (true, true),
+                }
+            FlexDirection::ColumnReverse =>
+                match self.direction {
+                    DockingZoneSplitDirection::VerticallyBefore => (true, false),
+                    DockingZoneSplitDirection::VerticallyAfter => (true, true),
+                    DockingZoneSplitDirection::HorizontallyBefore => (false, false),
+                    DockingZoneSplitDirection::HorizontallyAfter => (false, true),
+                }
         };
 
         // Missing SizedZone on a DockingZone must panic
         let mut sized_zone = world.get_mut::<SizedZone>(self.docking_zone).unwrap();
 
-        let new_container_size = if inject_container {
-            50.
-        } else {
-            current_size / 2.
-        };
+        let new_container_size = if inject_container { 50.0 } else { current_size / 2.0 };
         sized_zone.set_size(new_container_size);
 
         let mut queue = CommandQueue::default();
@@ -625,13 +601,11 @@ impl Command for DockingZoneSplit {
                         min_size: current_min_size,
                         ..default()
                     },
-                    |_| {},
+                    |_| {}
                 )
                 .id();
 
-            commands
-                .entity(parent_id)
-                .insert_children(current_index, &[new_parent_id]);
+            commands.entity(parent_id).insert_children(current_index, &[new_parent_id]);
 
             parent_id = new_parent_id;
         }
@@ -649,7 +623,7 @@ impl Command for DockingZoneSplit {
                     if let Some(floating_panel_id) = self.panel_to_dock {
                         container.dock_panel(floating_panel_id);
                     }
-                },
+                }
             )
             .id();
 
@@ -657,15 +631,11 @@ impl Command for DockingZoneSplit {
             if sibling_before {
                 commands.entity(parent_id).add_child(self.docking_zone);
             } else {
-                commands
-                    .entity(parent_id)
-                    .insert_children(0, &[self.docking_zone]);
+                commands.entity(parent_id).insert_children(0, &[self.docking_zone]);
             }
         } else {
             if sibling_before {
-                commands
-                    .entity(parent_id)
-                    .insert_children(current_index, &[new_docking_zone_id]);
+                commands.entity(parent_id).insert_children(current_index, &[new_docking_zone_id]);
             } else {
                 commands
                     .entity(parent_id)
@@ -734,7 +704,7 @@ impl DockingZoneHighlight {
         let base_theme = PseudoTheme::deferred(None, DockingZoneHighlight::primary_style);
         let visible_theme = PseudoTheme::deferred(
             vec![PseudoState::Visible],
-            DockingZoneHighlight::visible_style,
+            DockingZoneHighlight::visible_style
         );
         Theme::new(vec![base_theme, visible_theme])
     }
@@ -744,7 +714,7 @@ impl DockingZoneHighlight {
     }
 
     fn visible_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
-        style_builder.background_color(theme_data.colors().accent(Accent::Outline).with_a(0.2));
+        style_builder.background_color(theme_data.colors().accent(Accent::Outline).with_alpha(0.2));
     }
 
     fn bundle(zone: Entity) -> impl Bundle {
@@ -759,17 +729,19 @@ impl DockingZoneHighlight {
                 visibility: Visibility::Hidden,
                 ..default()
             },
-            LockedStyleAttributes::from_vec(vec![
-                LockableStyleAttribute::Width,
-                LockableStyleAttribute::Height,
-                LockableStyleAttribute::Top,
-                LockableStyleAttribute::Right,
-                LockableStyleAttribute::Bottom,
-                LockableStyleAttribute::Left,
-                LockableStyleAttribute::FocusPolicy,
-                LockableStyleAttribute::PositionType,
-                LockableStyleAttribute::Visibility,
-            ]),
+            LockedStyleAttributes::from_vec(
+                vec![
+                    LockableStyleAttribute::Width,
+                    LockableStyleAttribute::Height,
+                    LockableStyleAttribute::Top,
+                    LockableStyleAttribute::Right,
+                    LockableStyleAttribute::Bottom,
+                    LockableStyleAttribute::Left,
+                    LockableStyleAttribute::FocusPolicy,
+                    LockableStyleAttribute::PositionType,
+                    LockableStyleAttribute::Visibility
+                ]
+            ),
             PseudoStates::new(),
             VisibilityToPseudoState,
             DockingZoneHighlight { zone },
@@ -796,26 +768,26 @@ pub trait UiDockingZoneExt {
         &mut self,
         config: SizedZoneConfig,
         remove_empty: bool,
-        spawn_children: impl FnOnce(&mut UiBuilder<(Entity, TabContainer)>),
+        spawn_children: impl FnOnce(&mut UiBuilder<(Entity, TabContainer)>)
     ) -> UiBuilder<Entity>;
 
     fn docking_zone_split(
         &mut self,
         config: SizedZoneConfig,
-        spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
+        spawn_children: impl FnOnce(&mut UiBuilder<Entity>)
     ) -> UiBuilder<Entity>;
 }
 
 impl UiDockingZoneExt for UiBuilder<'_, Entity> {
     /// A flexible docking zone, able to receive `FloatingPanels` and dock them in its `TabContainer`
-    /// 
+    ///
     /// ### PseudoState usage
     /// - `PseudoState::Visible` is used by its `DockingZoneHighlight`
     fn docking_zone(
         &mut self,
         config: SizedZoneConfig,
         remove_empty: bool,
-        spawn_children: impl FnOnce(&mut UiBuilder<(Entity, TabContainer)>),
+        spawn_children: impl FnOnce(&mut UiBuilder<(Entity, TabContainer)>)
     ) -> UiBuilder<Entity> {
         let mut tab_container = Entity::PLACEHOLDER;
         let mut zone_highlight = Entity::PLACEHOLDER;
@@ -852,7 +824,7 @@ impl UiDockingZoneExt for UiBuilder<'_, Entity> {
     fn docking_zone_split(
         &mut self,
         config: SizedZoneConfig,
-        spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
+        spawn_children: impl FnOnce(&mut UiBuilder<Entity>)
     ) -> UiBuilder<Entity> {
         let new_id = self
             .sized_zone(config, spawn_children)

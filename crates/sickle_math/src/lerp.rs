@@ -1,7 +1,4 @@
-use bevy::{
-    render::color::Color,
-    ui::{UiRect, Val},
-};
+use bevy::{ color::Color, ui::{ UiRect, Val } };
 
 pub trait Lerp {
     fn lerp(&self, to: Self, t: f32) -> Self;
@@ -13,29 +10,31 @@ pub trait Lerp64 {
 
 impl Lerp for f32 {
     fn lerp(&self, to: Self, t: f32) -> Self {
-        self + ((to - self) * t)
+        self + (to - self) * t
     }
 }
 
 impl Lerp64 for f32 {
     fn lerp_64(&self, to: Self, t: f64) -> Self {
-        self + ((to - self) * t as f32)
+        self + (to - self) * (t as f32)
     }
 }
 
 impl Lerp64 for f64 {
     fn lerp_64(&self, to: Self, t: f64) -> Self {
-        self + ((to - self) * t)
+        self + (to - self) * t
     }
 }
 
 impl Lerp for Color {
     fn lerp(&self, to: Self, t: f32) -> Self {
-        Color::rgba(
-            self.r().lerp(to.r(), t).clamp(0., 1.),
-            self.g().lerp(to.g(), t).clamp(0., 1.),
-            self.b().lerp(to.b(), t).clamp(0., 1.),
-            self.a().lerp(to.a(), t).clamp(0., 1.),
+        let from = self.linear();
+        let target = to.linear();
+        Color::srgba(
+            from.red.lerp(target.red, t).clamp(0.0, 1.0),
+            from.green.lerp(target.green, t).clamp(0.0, 1.0),
+            from.blue.lerp(target.blue, t).clamp(0.0, 1.0),
+            from.alpha.lerp(target.alpha, t).clamp(0.0, 1.0)
         )
     }
 }
@@ -46,11 +45,7 @@ impl Lerp for Val {
         match self {
             Val::Auto => self.clone(),
             Val::Px(value) => {
-                if let Val::Px(other) = to {
-                    Self::Px(value.lerp(other, t))
-                } else {
-                    self.clone()
-                }
+                if let Val::Px(other) = to { Self::Px(value.lerp(other, t)) } else { self.clone() }
             }
             Val::Percent(value) => {
                 if let Val::Percent(other) = to {
@@ -60,18 +55,10 @@ impl Lerp for Val {
                 }
             }
             Val::Vw(value) => {
-                if let Val::Vw(other) = to {
-                    Self::Vw(value.lerp(other, t))
-                } else {
-                    self.clone()
-                }
+                if let Val::Vw(other) = to { Self::Vw(value.lerp(other, t)) } else { self.clone() }
             }
             Val::Vh(value) => {
-                if let Val::Vh(other) = to {
-                    Self::Vh(value.lerp(other, t))
-                } else {
-                    self.clone()
-                }
+                if let Val::Vh(other) = to { Self::Vh(value.lerp(other, t)) } else { self.clone() }
             }
             Val::VMin(value) => {
                 if let Val::VMin(other) = to {
@@ -97,7 +84,7 @@ impl Lerp for UiRect {
             self.left.lerp(to.left, t),
             self.right.lerp(to.right, t),
             self.top.lerp(to.top, t),
-            self.bottom.lerp(to.bottom, t),
+            self.bottom.lerp(to.bottom, t)
         )
     }
 }

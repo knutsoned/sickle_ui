@@ -1,4 +1,4 @@
-use bevy::{ecs::system::CommandQueue, prelude::*, ui::FocusPolicy, window::PrimaryWindow};
+use bevy::{ ecs::world::CommandQueue, prelude::*, ui::FocusPolicy, window::PrimaryWindow };
 
 use sickle_macros::UiContext;
 use sickle_ui_scaffold::prelude::*;
@@ -24,7 +24,7 @@ impl Plugin for ContextMenuPlugin {
                     position_added_context_menu,
                 )
                     .chain()
-                    .in_set(ContextMenuUpdate),
+                    .in_set(ContextMenuUpdate)
             )
             .add_systems(PostUpdate, delete_orphaned_context_menus);
     }
@@ -35,7 +35,7 @@ fn handle_click_or_touch(
     r_mouse: Res<ButtonInput<MouseButton>>,
     q_context_menu: Query<&Interaction, (With<ContextMenu>, Changed<Interaction>)>,
     mut q_interacted: Query<(Entity, &Interaction, &mut GenerateContextMenu)>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     let mut close_all = false;
 
@@ -90,7 +90,7 @@ fn handle_click_or_touch(
 
 fn delete_closed_context_menu(
     mut q_gen_menus: Query<&mut GenerateContextMenu, Changed<GenerateContextMenu>>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     for mut gen_menu in &mut q_gen_menus {
         if !gen_menu.is_open {
@@ -105,8 +105,10 @@ fn delete_closed_context_menu(
 }
 
 fn generate_context_menu(world: &mut World) {
-    let mut q_gen_menus =
-        world.query_filtered::<(Entity, &mut GenerateContextMenu), Changed<GenerateContextMenu>>();
+    let mut q_gen_menus = world.query_filtered::<
+        (Entity, &mut GenerateContextMenu),
+        Changed<GenerateContextMenu>
+    >();
 
     let mut opened_menu_gen: Option<Entity> = None;
     for (entity, gen_menu) in q_gen_menus.iter(world) {
@@ -143,17 +145,10 @@ fn generate_context_menu(world: &mut World) {
                 return false;
             };
 
-            type_registry
-                .get_type_data::<ReflectContextMenuGenerator>(type_id)
-                .is_some()
+            type_registry.get_type_data::<ReflectContextMenuGenerator>(type_id).is_some()
         })
         .map(|generator_id| {
-            let type_id = world
-                .components()
-                .get_info(generator_id)
-                .unwrap()
-                .type_id()
-                .unwrap();
+            let type_id = world.components().get_info(generator_id).unwrap().type_id().unwrap();
             let reflect_generator = type_registry
                 .get_type_data::<ReflectContextMenuGenerator>(type_id)
                 .unwrap();
@@ -166,8 +161,9 @@ fn generate_context_menu(world: &mut World) {
                 .reflect(entity_ref)
                 .unwrap();
 
-            let actual_generator: &dyn ContextMenuGenerator =
-                reflect_generator.get(&*component).unwrap();
+            let actual_generator: &dyn ContextMenuGenerator = reflect_generator
+                .get(&*component)
+                .unwrap();
             actual_generator
         })
         .collect();
@@ -182,10 +178,7 @@ fn generate_context_menu(world: &mut World) {
             }
         }
 
-        warn!(
-            "Cannot create context menu for entity {:?}. No generators implemented!",
-            entity
-        );
+        warn!("Cannot create context menu for entity {:?}. No generators implemented!", entity);
         return;
     }
 
@@ -195,10 +188,7 @@ fn generate_context_menu(world: &mut World) {
     let mut commands = Commands::new(&mut queue, world);
     let name = format!("Context Menu of [{:?}]", entity);
 
-    let container_id = commands
-        .ui_builder(root_node)
-        .spawn(ContextMenu::frame(name))
-        .id();
+    let container_id = commands.ui_builder(root_node).spawn(ContextMenu::frame(name)).id();
 
     let context_menu = ContextMenu {
         context: entity,
@@ -233,7 +223,7 @@ fn position_added_context_menu(
     q_context_menus: Query<Entity, Added<ContextMenu>>,
     q_window: Query<&Window, With<PrimaryWindow>>,
     //r_touches: Res<Touches>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     let Ok(window) = q_window.get_single() else {
         return;
@@ -249,19 +239,16 @@ fn position_added_context_menu(
     };
 
     for entity in &q_context_menus {
-        commands
-            .style(entity)
-            .position_type(PositionType::Absolute)
-            .absolute_position(position);
+        commands.style(entity).position_type(PositionType::Absolute).absolute_position(position);
     }
 }
 
 fn update_context_menu_vertical_position(
     mut q_node_style: Query<
         (&Node, &Transform, &mut Style, &mut Visibility),
-        (With<ContextMenu>, Changed<Node>),
+        (With<ContextMenu>, Changed<Node>)
     >,
-    q_window: Query<&Window, With<PrimaryWindow>>,
+    q_window: Query<&Window, With<PrimaryWindow>>
 ) {
     let Ok(window) = q_window.get_single() else {
         return;
@@ -271,13 +258,13 @@ fn update_context_menu_vertical_position(
     for (node, transform, mut style, mut visibility) in &mut q_node_style {
         let size = node.size();
 
-        let position = transform.translation.truncate() - (size / 2.);
+        let position = transform.translation.truncate() - size / 2.0;
 
         if position.x + size.x > resolution.x {
-            style.left = Val::Px(0f32.max(position.x - size.x));
+            style.left = Val::Px((0f32).max(position.x - size.x));
         }
         if position.y + size.y > resolution.y {
-            style.top = Val::Px(0f32.max(position.y - size.y));
+            style.top = Val::Px((0f32).max(position.y - size.y));
         }
 
         *visibility = Visibility::Visible;
@@ -286,7 +273,7 @@ fn update_context_menu_vertical_position(
 
 fn delete_orphaned_context_menus(
     q_context_menus: Query<(Entity, &ContextMenu)>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     for (entity, context_menu) in &q_context_menus {
         if commands.get_entity(context_menu.context).is_none() {
@@ -354,7 +341,7 @@ impl ContextMenu {
         let colors = theme_data.colors();
 
         style_builder
-            .max_height(Val::Percent(100.))
+            .max_height(Val::Percent(100.0))
             .position_type(PositionType::Absolute)
             .border(UiRect::all(Val::Px(theme_spacing.borders.extra_small)))
             .padding(UiRect::all(Val::Px(theme_spacing.gaps.small)))
@@ -376,10 +363,9 @@ impl ContextMenu {
                 focus_policy: FocusPolicy::Block,
                 ..default()
             },
-            LockedStyleAttributes::from_vec(vec![
-                LockableStyleAttribute::FocusPolicy,
-                LockableStyleAttribute::Overflow,
-            ]),
+            LockedStyleAttributes::from_vec(
+                vec![LockableStyleAttribute::FocusPolicy, LockableStyleAttribute::Overflow]
+            ),
             Interaction::default(),
         )
     }

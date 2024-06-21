@@ -1,7 +1,7 @@
 use bevy::{
     input::mouse::MouseScrollUnit,
     prelude::*,
-    ui::{FocusPolicy, RelativeCursorPosition},
+    ui::{ FocusPolicy, RelativeCursorPosition },
 };
 
 use sickle_ui_scaffold::prelude::*;
@@ -13,19 +13,17 @@ pub struct ScrollViewPlugin;
 
 impl Plugin for ScrollViewPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(ComponentThemePlugin::<ScrollView>::default())
-            .add_systems(
-                Update,
-                (
-                    update_scroll_view_on_tracked_style_state_change,
-                    update_scroll_view_on_content_change,
-                    update_scroll_view_on_scroll.after(ScrollableUpdate),
-                    update_scroll_view_on_drag.after(DraggableUpdate),
-                    update_scroll_view_offset,
-                    update_scroll_view_layout.in_set(ScrollViewLayoutUpdate),
-                )
-                    .chain(),
-            );
+        app.add_plugins(ComponentThemePlugin::<ScrollView>::default()).add_systems(
+            Update,
+            (
+                update_scroll_view_on_tracked_style_state_change,
+                update_scroll_view_on_content_change,
+                update_scroll_view_on_scroll.after(ScrollableUpdate),
+                update_scroll_view_on_drag.after(DraggableUpdate),
+                update_scroll_view_offset,
+                update_scroll_view_layout.in_set(ScrollViewLayoutUpdate),
+            ).chain()
+        );
     }
 }
 
@@ -33,7 +31,7 @@ impl Plugin for ScrollViewPlugin {
 pub struct ScrollViewLayoutUpdate;
 
 fn update_scroll_view_on_tracked_style_state_change(
-    mut q_scroll_views: Query<(&mut ScrollView, &TrackedStyleState), Changed<TrackedStyleState>>,
+    mut q_scroll_views: Query<(&mut ScrollView, &TrackedStyleState), Changed<TrackedStyleState>>
 ) {
     for (mut scroll_view, state) in &mut q_scroll_views {
         let should_disable =
@@ -47,7 +45,7 @@ fn update_scroll_view_on_tracked_style_state_change(
 
 fn update_scroll_view_on_content_change(
     q_content: Query<&ScrollViewContent, Changed<Node>>,
-    mut q_scroll_view: Query<&mut ScrollView>,
+    mut q_scroll_view: Query<&mut ScrollView>
 ) {
     for content in &q_content {
         let Ok(mut container) = q_scroll_view.get_mut(content.scroll_view) else {
@@ -55,16 +53,17 @@ fn update_scroll_view_on_content_change(
         };
 
         // Touch for change
-        container.scroll_offset = container.scroll_offset;
+        // knutsoned - not sure if this is right, but it wouldn't accept direct self-assignment
+        container.scroll_offset = container.scroll_offset.clone();
     }
 }
 
 fn update_scroll_view_on_scroll(
     q_scrollables: Query<
         (AnyOf<(&ScrollViewViewport, &ScrollBarHandle)>, &Scrollable),
-        Changed<Scrollable>,
+        Changed<Scrollable>
     >,
-    mut q_scroll_view: Query<&mut ScrollView>,
+    mut q_scroll_view: Query<&mut ScrollView>
 ) {
     for ((viewport, handle), scrollable) in &q_scrollables {
         let Some((axis, diff, unit)) = scrollable.last_change() else {
@@ -88,11 +87,11 @@ fn update_scroll_view_on_scroll(
         }
 
         let offset = match axis {
-            ScrollAxis::Horizontal => Vec2 { x: diff, y: 0. },
-            ScrollAxis::Vertical => Vec2 { x: 0., y: diff },
+            ScrollAxis::Horizontal => Vec2 { x: diff, y: 0.0 },
+            ScrollAxis::Vertical => Vec2 { x: 0.0, y: diff },
         };
         let diff = match unit {
-            MouseScrollUnit::Line => offset * 20.,
+            MouseScrollUnit::Line => offset * 20.0,
             MouseScrollUnit::Pixel => offset,
         };
         scroll_view.scroll_offset = scroll_view.scroll_offset + diff;
@@ -104,12 +103,13 @@ fn update_scroll_view_on_scroll(
 fn update_scroll_view_on_drag(
     q_draggable: Query<(Entity, &Draggable, &ScrollBarHandle), Changed<Draggable>>,
     q_node: Query<&Node>,
-    mut q_scroll_view: Query<&mut ScrollView>,
+    mut q_scroll_view: Query<&mut ScrollView>
 ) {
     for (entity, draggable, bar_handle) in &q_draggable {
-        if draggable.state == DragState::Inactive
-            || draggable.state == DragState::MaybeDragged
-            || draggable.state == DragState::DragCanceled
+        if
+            draggable.state == DragState::Inactive ||
+            draggable.state == DragState::MaybeDragged ||
+            draggable.state == DragState::DragCanceled
         {
             continue;
         }
@@ -143,7 +143,7 @@ fn update_scroll_view_on_drag(
             ScrollAxis::Vertical => content_node.unrounded_size().y,
         };
         let overflow = content_size - container_size;
-        if overflow <= 0. {
+        if overflow <= 0.0 {
             continue;
         }
 
@@ -153,26 +153,27 @@ fn update_scroll_view_on_drag(
         };
         let remaining_space = container_size - bar_size;
         let ratio = overflow / remaining_space;
-        let diff = match bar_handle.axis {
-            ScrollAxis::Horizontal => diff.x,
-            ScrollAxis::Vertical => diff.y,
-        } * ratio;
+        let diff =
+            (match bar_handle.axis {
+                ScrollAxis::Horizontal => diff.x,
+                ScrollAxis::Vertical => diff.y,
+            }) * ratio;
 
         scroll_view.scroll_offset += match bar_handle.axis {
-            ScrollAxis::Horizontal => Vec2 { x: diff, y: 0. },
-            ScrollAxis::Vertical => Vec2 { x: 0., y: diff },
+            ScrollAxis::Horizontal => Vec2 { x: diff, y: 0.0 },
+            ScrollAxis::Vertical => Vec2 { x: 0.0, y: diff },
         };
     }
 }
 
 fn update_scroll_view_offset(
     mut q_scroll_views: Query<(&Node, &mut ScrollView), Or<(Changed<ScrollView>, Changed<Node>)>>,
-    q_node: Query<&Node>,
+    q_node: Query<&Node>
 ) {
     for (container_node, mut scroll_view) in &mut q_scroll_views {
         let container_width = container_node.unrounded_size().x;
         let container_height = container_node.unrounded_size().y;
-        if container_width == 0. || container_height == 0. {
+        if container_width == 0.0 || container_height == 0.0 {
             continue;
         }
 
@@ -182,15 +183,15 @@ fn update_scroll_view_offset(
         let content_height = content_node.unrounded_size().y;
 
         let overflow_x = content_width - container_width;
-        let scroll_offset_x = if overflow_x > 0. {
-            scroll_view.scroll_offset.x.clamp(0., overflow_x)
+        let scroll_offset_x = if overflow_x > 0.0 {
+            scroll_view.scroll_offset.x.clamp(0.0, overflow_x)
         } else {
             scroll_view.scroll_offset.x
         };
 
         let overflow_y = content_height - container_height;
-        let scroll_offset_y = if overflow_y > 0. {
-            scroll_view.scroll_offset.y.clamp(0., overflow_y)
+        let scroll_offset_y = if overflow_y > 0.0 {
+            scroll_view.scroll_offset.y.clamp(0.0, overflow_y)
         } else {
             scroll_view.scroll_offset.y
         };
@@ -206,8 +207,8 @@ fn update_scroll_view_offset(
         };
 
         scroll_view.visible_ratio = Vec2 {
-            x: (container_width / content_width).clamp(0., 1.),
-            y: (container_height / content_height).clamp(0., 1.),
+            x: (container_width / content_width).clamp(0.0, 1.0),
+            y: (container_height / content_height).clamp(0.0, 1.0),
         };
     }
 }
@@ -215,7 +216,7 @@ fn update_scroll_view_offset(
 fn update_scroll_view_layout(
     q_scroll_view: Query<(Entity, &ScrollView), Or<(Changed<ScrollView>, Changed<Node>)>>,
     q_node: Query<&Node>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     for (entity, scroll_view) in &q_scroll_view {
         if scroll_view.disabled {
@@ -227,9 +228,7 @@ fn update_scroll_view_layout(
 
             continue;
         } else {
-            commands
-                .entity(entity)
-                .remove_pseudo_state(PseudoState::Disabled);
+            commands.entity(entity).remove_pseudo_state(PseudoState::Disabled);
         }
 
         // Update content scroll
@@ -238,20 +237,18 @@ fn update_scroll_view_layout(
         let overflow_x = scroll_view.overflow.x;
         let overflow_y = scroll_view.overflow.y;
 
-        if overflow_x > 0. {
-            commands
-                .style_unchecked(scroll_view.content_container)
-                .left(Val::Px(-scroll_offset_x));
-            commands
-                .entity(entity)
-                .add_pseudo_state(PseudoState::OverflowX);
+        if overflow_x > 0.0 {
+            commands.style_unchecked(scroll_view.content_container).left(Val::Px(-scroll_offset_x));
+            commands.entity(entity).add_pseudo_state(PseudoState::OverflowX);
 
             // Unsafe unwrap: Scroll view scroll bars must have a Node
             let bar_container_node = q_node.get(scroll_view.horizontal_scroll_bar).unwrap();
             let bar_container_width = bar_container_node.unrounded_size().x;
 
-            let bar_width = (scroll_view.visible_ratio.x * bar_container_width)
-                .clamp(5., bar_container_width.max(5.));
+            let bar_width = (scroll_view.visible_ratio.x * bar_container_width).clamp(
+                5.0,
+                bar_container_width.max(5.0)
+            );
             let remaining_space = bar_container_width - bar_width;
             let bar_offset = (scroll_offset_x / overflow_x) * remaining_space;
             commands
@@ -259,28 +256,22 @@ fn update_scroll_view_layout(
                 .width(Val::Px(bar_width))
                 .left(Val::Px(bar_offset));
         } else {
-            commands
-                .style_unchecked(scroll_view.content_container)
-                .left(Val::Px(0.));
-            commands
-                .entity(entity)
-                .remove_pseudo_state(PseudoState::OverflowX);
+            commands.style_unchecked(scroll_view.content_container).left(Val::Px(0.0));
+            commands.entity(entity).remove_pseudo_state(PseudoState::OverflowX);
         }
 
-        if overflow_y > 0. {
-            commands
-                .style_unchecked(scroll_view.content_container)
-                .top(Val::Px(-scroll_offset_y));
-            commands
-                .entity(entity)
-                .add_pseudo_state(PseudoState::OverflowY);
+        if overflow_y > 0.0 {
+            commands.style_unchecked(scroll_view.content_container).top(Val::Px(-scroll_offset_y));
+            commands.entity(entity).add_pseudo_state(PseudoState::OverflowY);
 
             // Unsafe unwrap: Scroll view scroll bars must have a Node
             let bar_container_node = q_node.get(scroll_view.vertical_scroll_bar).unwrap();
             let bar_container_height = bar_container_node.unrounded_size().y;
 
-            let bar_height = (scroll_view.visible_ratio.y * bar_container_height)
-                .clamp(5., bar_container_height.max(5.));
+            let bar_height = (scroll_view.visible_ratio.y * bar_container_height).clamp(
+                5.0,
+                bar_container_height.max(5.0)
+            );
             let remaining_space = bar_container_height - bar_height;
             let bar_offset = (scroll_offset_y / overflow_y) * remaining_space;
             commands
@@ -288,12 +279,8 @@ fn update_scroll_view_layout(
                 .height(Val::Px(bar_height))
                 .top(Val::Px(bar_offset));
         } else {
-            commands
-                .style_unchecked(scroll_view.content_container)
-                .top(Val::Px(0.));
-            commands
-                .entity(entity)
-                .remove_pseudo_state(PseudoState::OverflowY);
+            commands.style_unchecked(scroll_view.content_container).top(Val::Px(0.0));
+            commands.entity(entity).remove_pseudo_state(PseudoState::OverflowY);
         }
     }
 }
@@ -403,11 +390,14 @@ impl UiContext for ScrollView {
             ScrollView::HORIZONTAL_SCROLL_HANDLE => Ok(self.horizontal_scroll_bar_handle),
             ScrollView::VERTICAL_SCROLL_BAR => Ok(self.vertical_scroll_bar),
             ScrollView::VERTICAL_SCROLL_HANDLE => Ok(self.vertical_scroll_bar_handle),
-            _ => Err(format!(
-                "{} doesn't exists for ScrollView. Possible contexts: {:?}",
-                target,
-                self.contexts()
-            )),
+            _ =>
+                Err(
+                    format!(
+                        "{} doesn't exists for ScrollView. Possible contexts: {:?}",
+                        target,
+                        self.contexts()
+                    )
+                ),
         }
     }
 
@@ -418,7 +408,7 @@ impl UiContext for ScrollView {
             ScrollView::HORIZONTAL_SCROLL_BAR,
             ScrollView::HORIZONTAL_SCROLL_HANDLE,
             ScrollView::VERTICAL_SCROLL_BAR,
-            ScrollView::VERTICAL_SCROLL_HANDLE,
+            ScrollView::VERTICAL_SCROLL_HANDLE
         ]
     }
 }
@@ -443,44 +433,44 @@ impl ScrollView {
 
     pub fn theme() -> Theme<ScrollView> {
         let base_theme = PseudoTheme::deferred_context(None, ScrollView::primary_style);
-        let disabled_theme =
-            PseudoTheme::deferred(vec![PseudoState::Disabled], ScrollView::disabled_style);
-        let overflow_x_theme =
-            PseudoTheme::deferred(vec![PseudoState::OverflowX], ScrollView::overflow_x_style);
-        let overflow_y_theme =
-            PseudoTheme::deferred(vec![PseudoState::OverflowY], ScrollView::overflow_y_style);
+        let disabled_theme = PseudoTheme::deferred(
+            vec![PseudoState::Disabled],
+            ScrollView::disabled_style
+        );
+        let overflow_x_theme = PseudoTheme::deferred(
+            vec![PseudoState::OverflowX],
+            ScrollView::overflow_x_style
+        );
+        let overflow_y_theme = PseudoTheme::deferred(
+            vec![PseudoState::OverflowY],
+            ScrollView::overflow_y_style
+        );
         let overflow_xy_theme = PseudoTheme::deferred(
             vec![PseudoState::OverflowX, PseudoState::OverflowY],
-            ScrollView::overflow_xy_style,
+            ScrollView::overflow_xy_style
         );
 
-        Theme::new(vec![
-            base_theme,
-            disabled_theme,
-            overflow_x_theme,
-            overflow_y_theme,
-            overflow_xy_theme,
-        ])
+        Theme::new(
+            vec![base_theme, disabled_theme, overflow_x_theme, overflow_y_theme, overflow_xy_theme]
+        )
     }
 
     // TODO: bevy 0.14: Add border radius to scroll bar handles
     fn primary_style(
         style_builder: &mut StyleBuilder,
         _scroll_view: &ScrollView,
-        theme_data: &ThemeData,
+        theme_data: &ThemeData
     ) {
         let theme_spacing = theme_data.spacing;
         let colors = theme_data.colors();
 
-        style_builder
-            .width(Val::Percent(100.))
-            .height(Val::Percent(100.));
+        style_builder.width(Val::Percent(100.0)).height(Val::Percent(100.0));
 
         style_builder
             .switch_target(ScrollView::HORIZONTAL_SCROLL_BAR)
-            .bottom(Val::Px(0.))
-            .left(Val::Px(0.))
-            .right(Val::Px(0.))
+            .bottom(Val::Px(0.0))
+            .left(Val::Px(0.0))
+            .right(Val::Px(0.0))
             .height(Val::Px(theme_spacing.scroll_bar_size))
             .border(UiRect::top(Val::Px(theme_spacing.borders.extra_small)))
             .border_color(colors.accent(Accent::Shadow))
@@ -489,28 +479,24 @@ impl ScrollView {
 
         style_builder
             .switch_target(ScrollView::VERTICAL_SCROLL_BAR)
-            .right(Val::Px(0.))
+            .right(Val::Px(0.0))
             .width(Val::Px(theme_spacing.scroll_bar_size))
-            .height(Val::Percent(100.))
+            .height(Val::Percent(100.0))
             .border(UiRect::left(Val::Px(theme_spacing.borders.extra_small)))
             .border_color(colors.accent(Accent::Shadow))
             .background_color(colors.container(Container::SurfaceMid))
             .visibility(Visibility::Hidden);
 
-        style_builder
-            .switch_target(ScrollView::CONTENT_CONTAINER)
-            .padding(UiRect::all(Val::Auto));
+        style_builder.switch_target(ScrollView::CONTENT_CONTAINER).padding(UiRect::all(Val::Auto));
 
         style_builder
             .switch_context(ScrollView::HORIZONTAL_SCROLL_HANDLE, None)
-            .border(UiRect::horizontal(Val::Px(
-                theme_spacing.borders.extra_small,
-            )))
+            .border(UiRect::horizontal(Val::Px(theme_spacing.borders.extra_small)))
             .border_color(colors.accent(Accent::Shadow))
             .animated()
             .background_color(AnimatedVals {
-                idle: colors.accent(Accent::Tertiary).with_a(0.5),
-                hover: colors.accent(Accent::Tertiary).with_a(0.8).into(),
+                idle: colors.accent(Accent::Tertiary).with_alpha(0.5),
+                hover: colors.accent(Accent::Tertiary).with_alpha(0.8).into(),
                 press: colors.accent(Accent::Tertiary).into(),
                 ..default()
             })
@@ -522,8 +508,8 @@ impl ScrollView {
             .border_color(colors.accent(Accent::Shadow))
             .animated()
             .background_color(AnimatedVals {
-                idle: colors.accent(Accent::Tertiary).with_a(0.5),
-                hover: colors.accent(Accent::Tertiary).with_a(0.8).into(),
+                idle: colors.accent(Accent::Tertiary).with_alpha(0.5),
+                hover: colors.accent(Accent::Tertiary).with_alpha(0.8).into(),
                 press: colors.accent(Accent::Tertiary).into(),
                 ..default()
             })
@@ -534,9 +520,7 @@ impl ScrollView {
         style_builder
             .switch_target(ScrollView::HORIZONTAL_SCROLL_BAR)
             .visibility(Visibility::Hidden);
-        style_builder
-            .switch_target(ScrollView::VERTICAL_SCROLL_BAR)
-            .visibility(Visibility::Hidden);
+        style_builder.switch_target(ScrollView::VERTICAL_SCROLL_BAR).visibility(Visibility::Hidden);
     }
 
     fn overflow_x_style(style_builder: &mut StyleBuilder, theme_data: &ThemeData) {
@@ -572,12 +556,9 @@ impl ScrollView {
 
         style_builder
             .switch_target(ScrollView::CONTENT_CONTAINER)
-            .padding(UiRect::px(
-                0.,
-                theme_spacing.scroll_bar_size,
-                0.,
-                theme_spacing.scroll_bar_size,
-            ));
+            .padding(
+                UiRect::px(0.0, theme_spacing.scroll_bar_size, 0.0, theme_spacing.scroll_bar_size)
+            );
     }
 
     fn frame() -> impl Bundle {
@@ -600,8 +581,8 @@ impl ScrollView {
             NodeBundle {
                 style: Style {
                     position_type: PositionType::Absolute,
-                    height: Val::Percent(100.),
-                    width: Val::Percent(100.),
+                    height: Val::Percent(100.0),
+                    width: Val::Percent(100.0),
                     overflow: Overflow::clip(),
                     ..default()
                 },
@@ -611,16 +592,18 @@ impl ScrollView {
             Interaction::default(),
             Scrollable::default(),
             ScrollViewViewport { scroll_view },
-            LockedStyleAttributes::from_vec(vec![
-                LockableStyleAttribute::PositionType,
-                LockableStyleAttribute::Width,
-                LockableStyleAttribute::Height,
-                LockableStyleAttribute::Overflow,
-                LockableStyleAttribute::FocusPolicy,
-                LockableStyleAttribute::Border,
-                LockableStyleAttribute::Padding,
-                LockableStyleAttribute::Margin,
-            ]),
+            LockedStyleAttributes::from_vec(
+                vec![
+                    LockableStyleAttribute::PositionType,
+                    LockableStyleAttribute::Width,
+                    LockableStyleAttribute::Height,
+                    LockableStyleAttribute::Overflow,
+                    LockableStyleAttribute::FocusPolicy,
+                    LockableStyleAttribute::Border,
+                    LockableStyleAttribute::Padding,
+                    LockableStyleAttribute::Margin
+                ]
+            ),
         )
     }
 
@@ -628,7 +611,7 @@ impl ScrollView {
         let width = if let Some(axis) = restrict_to {
             match axis {
                 ScrollAxis::Horizontal => Val::Auto,
-                ScrollAxis::Vertical => Val::Percent(100.),
+                ScrollAxis::Vertical => Val::Percent(100.0),
             }
         } else {
             Val::Auto
@@ -636,7 +619,7 @@ impl ScrollView {
 
         let height = if let Some(axis) = restrict_to {
             match axis {
-                ScrollAxis::Horizontal => Val::Percent(100.),
+                ScrollAxis::Horizontal => Val::Percent(100.0),
                 ScrollAxis::Vertical => Val::Auto,
             }
         } else {
@@ -649,28 +632,30 @@ impl ScrollView {
                 style: Style {
                     width,
                     height,
-                    min_width: Val::Percent(100.),
-                    min_height: Val::Percent(100.),
+                    min_width: Val::Percent(100.0),
+                    min_height: Val::Percent(100.0),
                     justify_self: JustifySelf::Start,
                     align_self: AlignSelf::Start,
                     flex_direction: FlexDirection::Column,
-                    flex_shrink: 0.,
+                    flex_shrink: 0.0,
                     ..default()
                 },
                 ..default()
             },
             ScrollViewContent { scroll_view },
-            LockedStyleAttributes::from_vec(vec![
-                LockableStyleAttribute::PositionType,
-                LockableStyleAttribute::MinWidth,
-                LockableStyleAttribute::MinHeight,
-                LockableStyleAttribute::JustifySelf,
-                LockableStyleAttribute::AlignSelf,
-                LockableStyleAttribute::FlexDirection,
-                LockableStyleAttribute::FlexShrink,
-                LockableStyleAttribute::Top,
-                LockableStyleAttribute::Left,
-            ]),
+            LockedStyleAttributes::from_vec(
+                vec![
+                    LockableStyleAttribute::PositionType,
+                    LockableStyleAttribute::MinWidth,
+                    LockableStyleAttribute::MinHeight,
+                    LockableStyleAttribute::JustifySelf,
+                    LockableStyleAttribute::AlignSelf,
+                    LockableStyleAttribute::FlexDirection,
+                    LockableStyleAttribute::FlexShrink,
+                    LockableStyleAttribute::Top,
+                    LockableStyleAttribute::Left
+                ]
+            ),
         )
     }
 
@@ -690,14 +675,16 @@ impl ScrollView {
                 z_index: ZIndex::Local(1),
                 ..default()
             },
-            LockedStyleAttributes::from_vec(vec![
-                LockableStyleAttribute::PositionType,
-                LockableStyleAttribute::JustifyContent,
-                LockableStyleAttribute::FocusPolicy,
-                LockableStyleAttribute::ZIndex,
-                LockableStyleAttribute::Padding,
-                LockableStyleAttribute::Margin,
-            ]),
+            LockedStyleAttributes::from_vec(
+                vec![
+                    LockableStyleAttribute::PositionType,
+                    LockableStyleAttribute::JustifyContent,
+                    LockableStyleAttribute::FocusPolicy,
+                    LockableStyleAttribute::ZIndex,
+                    LockableStyleAttribute::Padding,
+                    LockableStyleAttribute::Margin
+                ]
+            ),
         )
     }
 
@@ -708,10 +695,10 @@ impl ScrollView {
                 style: Style {
                     width: match axis {
                         ScrollAxis::Horizontal => Val::Auto,
-                        ScrollAxis::Vertical => Val::Percent(100.),
+                        ScrollAxis::Vertical => Val::Percent(100.0),
                     },
                     height: match axis {
-                        ScrollAxis::Horizontal => Val::Percent(100.),
+                        ScrollAxis::Horizontal => Val::Percent(100.0),
                         ScrollAxis::Vertical => Val::Auto,
                     },
                     ..default()
@@ -723,12 +710,14 @@ impl ScrollView {
             RelativeCursorPosition::default(),
             Scrollable::default(),
             ScrollBarHandle { axis, scroll_view },
-            LockedStyleAttributes::from_vec(vec![
-                LockableStyleAttribute::Width,
-                LockableStyleAttribute::Height,
-                LockableStyleAttribute::Top,
-                LockableStyleAttribute::Left,
-            ]),
+            LockedStyleAttributes::from_vec(
+                vec![
+                    LockableStyleAttribute::Width,
+                    LockableStyleAttribute::Height,
+                    LockableStyleAttribute::Top,
+                    LockableStyleAttribute::Left
+                ]
+            ),
         )
     }
 }
@@ -737,14 +726,14 @@ pub trait UiScrollViewExt {
     fn scroll_view(
         &mut self,
         restrict_to: impl Into<Option<ScrollAxis>>,
-        spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
+        spawn_children: impl FnOnce(&mut UiBuilder<Entity>)
     ) -> UiBuilder<Entity>;
 }
 
 impl UiScrollViewExt for UiBuilder<'_, Entity> {
     /// A simple scroll view. When the content overflows, scroll bars appear for the given direction.
     /// Can be restricted to scroll only on one axis.
-    /// 
+    ///
     /// ### PseudoState usage
     /// - `PseudoState::Disabled` is used when the view is disabled, preventing scroll bars from showing
     /// - `PseudoState::OverflowX` and `PseudoState::OverflowY` is used to indicate which axis the content
@@ -752,7 +741,7 @@ impl UiScrollViewExt for UiBuilder<'_, Entity> {
     fn scroll_view(
         &mut self,
         restrict_to: impl Into<Option<ScrollAxis>>,
-        spawn_children: impl FnOnce(&mut UiBuilder<Entity>),
+        spawn_children: impl FnOnce(&mut UiBuilder<Entity>)
     ) -> UiBuilder<Entity> {
         let restricted_to = restrict_to.into();
         let mut scroll_view = ScrollView {
@@ -768,24 +757,20 @@ impl UiScrollViewExt for UiBuilder<'_, Entity> {
                     scroll_view.content_container = viewport
                         .container(
                             ScrollView::content(scroll_view_id, restricted_to),
-                            spawn_children,
+                            spawn_children
                         )
                         .id();
                 })
                 .id();
 
             scroll_view.horizontal_scroll_bar = frame
-                .container(
-                    ScrollView::scroll_bar(ScrollAxis::Horizontal),
-                    |scroll_bar| {
-                        scroll_view.horizontal_scroll_bar_handle = scroll_bar
-                            .spawn((ScrollView::scroll_bar_handle(
-                                scroll_view_id,
-                                ScrollAxis::Horizontal,
-                            ),))
-                            .id();
-                    },
-                )
+                .container(ScrollView::scroll_bar(ScrollAxis::Horizontal), |scroll_bar| {
+                    scroll_view.horizontal_scroll_bar_handle = scroll_bar
+                        .spawn((
+                            ScrollView::scroll_bar_handle(scroll_view_id, ScrollAxis::Horizontal),
+                        ))
+                        .id();
+                })
                 .insert(ScrollBar {
                     axis: ScrollAxis::Horizontal,
                     scroll_view: scroll_view_id,
@@ -796,10 +781,9 @@ impl UiScrollViewExt for UiBuilder<'_, Entity> {
             scroll_view.vertical_scroll_bar = frame
                 .container(ScrollView::scroll_bar(ScrollAxis::Vertical), |scroll_bar| {
                     scroll_view.vertical_scroll_bar_handle = scroll_bar
-                        .spawn((ScrollView::scroll_bar_handle(
-                            scroll_view_id,
-                            ScrollAxis::Vertical,
-                        ),))
+                        .spawn((
+                            ScrollView::scroll_bar_handle(scroll_view_id, ScrollAxis::Vertical),
+                        ))
                         .id();
                 })
                 .insert(ScrollBar {

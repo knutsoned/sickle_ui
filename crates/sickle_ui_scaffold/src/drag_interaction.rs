@@ -1,25 +1,24 @@
 use bevy::prelude::*;
+use bevy::reflect::Reflect;
 use bevy::ui::RelativeCursorPosition;
-use bevy::window::{CursorGrabMode, PrimaryWindow};
-use bevy_reflect::Reflect;
+use bevy::window::{ CursorGrabMode, PrimaryWindow };
 
-use crate::flux_interaction::{FluxInteraction, FluxInteractionUpdate};
+use crate::flux_interaction::{ FluxInteraction, FluxInteractionUpdate };
 
 pub struct DragInteractionPlugin;
 
 impl Plugin for DragInteractionPlugin {
     fn build(&self, app: &mut App) {
-        app.configure_sets(Update, DraggableUpdate.after(FluxInteractionUpdate))
-            .add_systems(
-                Update,
-                (
-                    update_drag_progress,
-                    update_drag_state,
-                    update_cursor_confinement_from_drag.run_if(is_windows_os),
-                )
-                    .chain()
-                    .in_set(DraggableUpdate),
-            );
+        app.configure_sets(Update, DraggableUpdate.after(FluxInteractionUpdate)).add_systems(
+            Update,
+            (
+                update_drag_progress,
+                update_drag_state,
+                update_cursor_confinement_from_drag.run_if(is_windows_os),
+            )
+                .chain()
+                .in_set(DraggableUpdate)
+        );
     }
 }
 
@@ -71,35 +70,32 @@ fn is_windows_os() -> bool {
 
 fn update_cursor_confinement_from_drag(
     q_draggable: Query<&Draggable, Changed<Draggable>>,
-    mut q_window: Query<&mut Window, With<PrimaryWindow>>,
+    mut q_window: Query<&mut Window, With<PrimaryWindow>>
 ) {
     let Ok(mut window) = q_window.get_single_mut() else {
         return;
     };
 
-    if let Some(_) = q_draggable
-        .iter()
-        .find(|&draggable| draggable.state == DragState::DragStart)
-    {
+    if let Some(_) = q_draggable.iter().find(|&draggable| draggable.state == DragState::DragStart) {
         window.cursor.grab_mode = CursorGrabMode::Confined;
-    } else if let Some(_) = q_draggable.iter().find(|&draggable| {
-        draggable.state == DragState::DragEnd || draggable.state == DragState::DragCanceled
-    }) {
+    } else if
+        let Some(_) = q_draggable
+            .iter()
+            .find(|&draggable| {
+                draggable.state == DragState::DragEnd || draggable.state == DragState::DragCanceled
+            })
+    {
         window.cursor.grab_mode = CursorGrabMode::None;
     }
 }
 
 // TODO: Consider using MouseMotion and TouchInput events directly
 fn update_drag_progress(
-    mut q_draggable: Query<(
-        &mut Draggable,
-        &FluxInteraction,
-        &RelativeCursorPosition,
-        &Node,
-        &GlobalTransform,
-    )>,
+    mut q_draggable: Query<
+        (&mut Draggable, &FluxInteraction, &RelativeCursorPosition, &Node, &GlobalTransform)
+    >,
     r_touches: Res<Touches>,
-    r_keys: Res<ButtonInput<KeyCode>>,
+    r_keys: Res<ButtonInput<KeyCode>>
 ) {
     for (mut draggable, flux_interaction, relcurpos, node, global_trans) in &mut q_draggable {
         if draggable.state == DragState::DragEnd {
@@ -107,13 +103,16 @@ fn update_drag_progress(
             draggable.clear();
         } else if draggable.state == DragState::DragCanceled {
             draggable.state = DragState::Inactive;
-        } else if *flux_interaction == FluxInteraction::Pressed
-            && (draggable.state == DragState::MaybeDragged
-                || draggable.state == DragState::DragStart
-                || draggable.state == DragState::Dragging)
+        } else if
+            *flux_interaction == FluxInteraction::Pressed &&
+            (draggable.state == DragState::MaybeDragged ||
+                draggable.state == DragState::DragStart ||
+                draggable.state == DragState::Dragging)
         {
-            if (draggable.state == DragState::DragStart || draggable.state == DragState::Dragging)
-                && r_keys.just_pressed(KeyCode::Escape)
+            if
+                (draggable.state == DragState::DragStart ||
+                    draggable.state == DragState::Dragging) &&
+                r_keys.just_pressed(KeyCode::Escape)
             {
                 draggable.state = DragState::DragCanceled;
                 draggable.clear();
@@ -129,23 +128,28 @@ fn update_drag_progress(
                 DragSource::Mouse => {
                     if let Some(relative_cursor_pos) = relcurpos.normalized {
                         let node_rect = node.logical_rect(global_trans);
-                        Some(node_rect.min + (node_rect.size() * relative_cursor_pos))
+                        Some(node_rect.min + node_rect.size() * relative_cursor_pos)
                     } else {
                         None
                     }
                 }
-                DragSource::Touch(id) => match r_touches.get_pressed(id) {
-                    Some(touch) => touch.position().into(),
-                    None => None,
-                },
+                DragSource::Touch(id) =>
+                    match r_touches.get_pressed(id) {
+                        Some(touch) => touch.position().into(),
+                        None => None,
+                    }
             };
 
-            if let (Some(old_position), Some(updated_position)) = (draggable.position, new_position)
+            if
+                let (Some(old_position), Some(updated_position)) = (
+                    draggable.position,
+                    new_position,
+                )
             {
                 let diff = updated_position - old_position;
 
                 // No tolerance threshold, just move
-                if diff.length_squared() > 0. {
+                if diff.length_squared() > 0.0 {
                     if draggable.state == DragState::MaybeDragged {
                         draggable.state = DragState::DragStart;
                     }
@@ -160,20 +164,15 @@ fn update_drag_progress(
 
 fn update_drag_state(
     mut q_draggable: Query<
-        (
-            &mut Draggable,
-            &FluxInteraction,
-            &RelativeCursorPosition,
-            &Node,
-            &GlobalTransform,
-        ),
-        Changed<FluxInteraction>,
+        (&mut Draggable, &FluxInteraction, &RelativeCursorPosition, &Node, &GlobalTransform),
+        Changed<FluxInteraction>
     >,
-    r_touches: Res<Touches>,
+    r_touches: Res<Touches>
 ) {
     for (mut draggable, flux_interaction, relcurpos, node, global_trans) in &mut q_draggable {
-        if *flux_interaction == FluxInteraction::Pressed
-            && draggable.state != DragState::MaybeDragged
+        if
+            *flux_interaction == FluxInteraction::Pressed &&
+            draggable.state != DragState::MaybeDragged
         {
             let mut drag_source = DragSource::Mouse;
 
@@ -182,7 +181,7 @@ fn update_drag_state(
             let mut initial_position;
             if let Some(relative_cursor_pos) = relcurpos.normalized {
                 let node_rect = node.logical_rect(global_trans);
-                initial_position = Some(node_rect.min + (node_rect.size() * relative_cursor_pos))
+                initial_position = Some(node_rect.min + node_rect.size() * relative_cursor_pos);
             } else {
                 initial_position = None;
             }
@@ -197,8 +196,9 @@ fn update_drag_state(
             draggable.origin = initial_position;
             draggable.position = initial_position;
             draggable.diff = Vec2::default().into();
-        } else if *flux_interaction == FluxInteraction::Released
-            || *flux_interaction == FluxInteraction::PressCanceled
+        } else if
+            *flux_interaction == FluxInteraction::Released ||
+            *flux_interaction == FluxInteraction::PressCanceled
         {
             if draggable.state == DragState::DragStart || draggable.state == DragState::Dragging {
                 draggable.state = DragState::DragEnd;
