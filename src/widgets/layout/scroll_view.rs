@@ -702,13 +702,8 @@ impl ScrollView {
                     },
                     ..default()
                 },
-                image: UiImage {
-                    color: Color::NONE,
-                    ..default()
-                },
                 ..default()
             },
-            BackgroundColor(Color::NONE),
             TrackedInteraction::default(),
             Draggable::default(),
             RelativeCursorPosition::default(),
