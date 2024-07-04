@@ -1,7 +1,6 @@
-use std::{cmp::Ordering, ops::Add, time::Duration};
+use std::{ cmp::Ordering, ops::Add, time::Duration };
 
-use bevy::{prelude::*, time::Stopwatch, utils::HashMap};
-use bevy_reflect::Reflect;
+use bevy::{ prelude::*, time::Stopwatch, utils::HashMap };
 
 pub struct FluxInteractionPlugin;
 
@@ -18,7 +17,7 @@ impl Plugin for FluxInteractionPlugin {
                     update_prev_interaction,
                 )
                     .chain()
-                    .in_set(FluxInteractionUpdate),
+                    .in_set(FluxInteractionUpdate)
             );
     }
 }
@@ -31,7 +30,7 @@ pub struct FluxInteractionConfig {
 impl Default for FluxInteractionConfig {
     fn default() -> Self {
         Self {
-            max_interaction_duration: 1.,
+            max_interaction_duration: 1.0,
         }
     }
 }
@@ -165,7 +164,7 @@ impl FluxInteractionStopwatchLock {
         values.sort();
 
         // Safe unwrap: empty checked above
-        *(values.last().unwrap())
+        *values.last().unwrap()
     }
 
     pub fn lock(&mut self, owner: &'static str, duration: StopwatchLock) {
@@ -193,12 +192,10 @@ pub enum PrevInteraction {
 fn tick_flux_interaction_stopwatch(
     config: Res<FluxInteractionConfig>,
     time: Res<Time<Real>>,
-    mut q_stopwatches: Query<(
-        Entity,
-        &mut FluxInteractionStopwatch,
-        Option<&FluxInteractionStopwatchLock>,
-    )>,
-    mut commands: Commands,
+    mut q_stopwatches: Query<
+        (Entity, &mut FluxInteractionStopwatch, Option<&FluxInteractionStopwatchLock>)
+    >,
+    mut commands: Commands
 ) {
     for (entity, mut stopwatch, lock) in &mut q_stopwatches {
         let remove_stopwatch = if let Some(lock) = lock {
@@ -224,8 +221,8 @@ fn tick_flux_interaction_stopwatch(
 fn update_flux_interaction(
     mut q_interaction: Query<
         (&PrevInteraction, &Interaction, &mut FluxInteraction),
-        Changed<Interaction>,
-    >,
+        Changed<Interaction>
+    >
 ) {
     for (prev, curr, mut flux) in &mut q_interaction {
         if *flux == FluxInteraction::Disabled {
@@ -234,8 +231,9 @@ fn update_flux_interaction(
 
         if *prev == PrevInteraction::None && *curr == Interaction::Hovered {
             *flux = FluxInteraction::PointerEnter;
-        } else if *prev == PrevInteraction::None && *curr == Interaction::Pressed
-            || *prev == PrevInteraction::Hovered && *curr == Interaction::Pressed
+        } else if
+            (*prev == PrevInteraction::None && *curr == Interaction::Pressed) ||
+            (*prev == PrevInteraction::Hovered && *curr == Interaction::Pressed)
         {
             *flux = FluxInteraction::Pressed;
         } else if *prev == PrevInteraction::Hovered && *curr == Interaction::None {
@@ -251,23 +249,21 @@ fn update_flux_interaction(
 fn reset_flux_interaction_stopwatch_on_change(
     mut q_stopwatch: Query<
         (Entity, Option<&mut FluxInteractionStopwatch>),
-        Changed<FluxInteraction>,
+        Changed<FluxInteraction>
     >,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     for (entity, stopwatch) in &mut q_stopwatch {
         if let Some(mut stopwatch) = stopwatch {
             stopwatch.0.reset();
         } else {
-            commands
-                .entity(entity)
-                .insert(FluxInteractionStopwatch::default());
+            commands.entity(entity).insert(FluxInteractionStopwatch::default());
         }
     }
 }
 
 fn update_prev_interaction(
-    mut q_interaction: Query<(&mut PrevInteraction, &Interaction), Changed<Interaction>>,
+    mut q_interaction: Query<(&mut PrevInteraction, &Interaction), Changed<Interaction>>
 ) {
     for (mut prev_interaction, interaction) in &mut q_interaction {
         *prev_interaction = match *interaction {

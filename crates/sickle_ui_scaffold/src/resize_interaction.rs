@@ -1,14 +1,15 @@
 use bevy::prelude::*;
-use bevy_reflect::Reflect;
 use bevy::ui::RelativeCursorPosition;
 use sickle_math::ease::Ease;
 
 use crate::{
-    animated_interaction::{AnimatedInteraction, AnimationConfig},
+    animated_interaction::{ AnimatedInteraction, AnimationConfig },
     drag_interaction::Draggable,
     interactions::InteractiveBackground,
     ui_commands::SetCursorExt,
-    FluxInteraction, FluxInteractionUpdate, TrackedInteraction,
+    FluxInteraction,
+    FluxInteractionUpdate,
+    TrackedInteraction,
 };
 
 pub struct ResizeHandlePlugin;
@@ -19,13 +20,13 @@ impl Plugin for ResizeHandlePlugin {
             Update,
             update_cursor_on_resize_handles
                 .run_if(should_update_resize_handle_cursor)
-                .after(FluxInteractionUpdate),
+                .after(FluxInteractionUpdate)
         );
     }
 }
 
 fn should_update_resize_handle_cursor(
-    q_flux: Query<&ResizeHandle, Changed<FluxInteraction>>,
+    q_flux: Query<&ResizeHandle, Changed<FluxInteraction>>
 ) -> bool {
     q_flux.iter().count() > 0
 }
@@ -33,17 +34,17 @@ fn should_update_resize_handle_cursor(
 fn update_cursor_on_resize_handles(
     q_flux: Query<(&ResizeHandle, &FluxInteraction)>,
     mut locked: Local<bool>,
-    mut commands: Commands,
+    mut commands: Commands
 ) {
     let mut new_cursor: Option<CursorIcon> = None;
-    let multiple_active = q_flux
-        .iter()
-        .filter(|(_, flux)| {
-            (**flux == FluxInteraction::PointerEnter && !*locked)
-                || **flux == FluxInteraction::Pressed
-        })
-        .count()
-        > 1;
+    let multiple_active =
+        q_flux
+            .iter()
+            .filter(|(_, flux)| {
+                (**flux == FluxInteraction::PointerEnter && !*locked) ||
+                    **flux == FluxInteraction::Pressed
+            })
+            .count() > 1;
 
     let omni_cursor = CursorIcon::Move;
 
@@ -110,11 +111,11 @@ impl ResizeHandle {
     }
 
     pub fn resize_zone_size() -> f32 {
-        4.
+        4.0
     }
 
     pub fn resize_zone_pullback() -> f32 {
-        2.
+        2.0
     }
 
     pub fn resize_handle_container(elevation: i32) -> impl Bundle {
@@ -123,8 +124,8 @@ impl ResizeHandle {
             NodeBundle {
                 style: Style {
                     position_type: PositionType::Absolute,
-                    width: Val::Percent(100.),
-                    height: Val::Percent(100.),
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
                     justify_content: JustifyContent::SpaceBetween,
                     align_self: AlignSelf::Stretch,
                     flex_direction: FlexDirection::Column,
@@ -140,13 +141,13 @@ impl ResizeHandle {
         let zone_size = ResizeHandle::resize_zone_size();
 
         let (width, height) = match direction {
-            ResizeDirection::North => (Val::Percent(100.), Val::Px(zone_size)),
+            ResizeDirection::North => (Val::Percent(100.0), Val::Px(zone_size)),
             ResizeDirection::NorthEast => (Val::Px(zone_size), Val::Px(zone_size)),
-            ResizeDirection::East => (Val::Px(zone_size), Val::Percent(100.)),
+            ResizeDirection::East => (Val::Px(zone_size), Val::Percent(100.0)),
             ResizeDirection::SouthEast => (Val::Px(zone_size), Val::Px(zone_size)),
-            ResizeDirection::South => (Val::Percent(100.), Val::Px(zone_size)),
+            ResizeDirection::South => (Val::Percent(100.0), Val::Px(zone_size)),
             ResizeDirection::SouthWest => (Val::Px(zone_size), Val::Px(zone_size)),
-            ResizeDirection::West => (Val::Px(zone_size), Val::Percent(100.)),
+            ResizeDirection::West => (Val::Px(zone_size), Val::Percent(100.0)),
             ResizeDirection::NorthWest => (Val::Px(zone_size), Val::Px(zone_size)),
         };
         let name = match direction {
@@ -177,7 +178,7 @@ impl ResizeHandle {
             Interaction::default(),
             TrackedInteraction::default(),
             InteractiveBackground {
-                highlight: Color::rgb(0., 0.5, 1.).into(),
+                highlight: Color::rgb(0.0, 0.5, 1.0).into(),
                 ..default()
             },
             AnimatedInteraction::<InteractiveBackground> {
@@ -220,35 +221,42 @@ impl ResizeDirection {
 
     pub fn to_size_diff(&self, drag_diff: Vec2) -> Vec2 {
         match self {
-            ResizeDirection::North => Vec2 {
-                x: 0.,
-                y: -drag_diff.y,
-            },
-            ResizeDirection::NorthEast => Vec2 {
-                x: drag_diff.x,
-                y: -drag_diff.y,
-            },
-            ResizeDirection::East => Vec2 {
-                x: drag_diff.x,
-                y: 0.,
-            },
+            ResizeDirection::North =>
+                Vec2 {
+                    x: 0.0,
+                    y: -drag_diff.y,
+                },
+            ResizeDirection::NorthEast =>
+                Vec2 {
+                    x: drag_diff.x,
+                    y: -drag_diff.y,
+                },
+            ResizeDirection::East =>
+                Vec2 {
+                    x: drag_diff.x,
+                    y: 0.0,
+                },
             ResizeDirection::SouthEast => drag_diff,
-            ResizeDirection::South => Vec2 {
-                x: 0.,
-                y: drag_diff.y,
-            },
-            ResizeDirection::SouthWest => Vec2 {
-                x: -drag_diff.x,
-                y: drag_diff.y,
-            },
-            ResizeDirection::West => Vec2 {
-                x: -drag_diff.x,
-                y: 0.,
-            },
-            ResizeDirection::NorthWest => Vec2 {
-                x: -drag_diff.x,
-                y: -drag_diff.y,
-            },
+            ResizeDirection::South =>
+                Vec2 {
+                    x: 0.0,
+                    y: drag_diff.y,
+                },
+            ResizeDirection::SouthWest =>
+                Vec2 {
+                    x: -drag_diff.x,
+                    y: drag_diff.y,
+                },
+            ResizeDirection::West =>
+                Vec2 {
+                    x: -drag_diff.x,
+                    y: 0.0,
+                },
+            ResizeDirection::NorthWest =>
+                Vec2 {
+                    x: -drag_diff.x,
+                    y: -drag_diff.y,
+                },
         }
     }
 }
