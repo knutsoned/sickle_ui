@@ -9,10 +9,10 @@ edition = "2021"
 dev = ["bevy/dynamic_linking"]
 
 [dependencies]
-sickle_math = { version = "0.2.0", git = "https://github.com/knutsoned/sickle_ui", branch = "014rc4" }
-sickle_macros = { version = "0.2.0", git = "https://github.com/knutsoned/sickle_ui", branch = "014rc4" }
-sickle_ui_scaffold = { version = "0.2.0", git = "https://github.com/knutsoned/sickle_ui", branch = "014rc4" }
+sickle_math = { version = "0.2.0", git = "https://github.com/knutsoned/sickle_ui", branch = "bevy_014_upgrade" }
+sickle_macros = { version = "0.2.0", git = "https://github.com/knutsoned/sickle_ui", branch = "bevy_014_upgrade" }
+sickle_ui_scaffold = { version = "0.2.0", git = "https://github.com/knutsoned/sickle_ui", branch = "bevy_014_upgrade" }
 
-bevy = { version = "0.14.0-rc.4" }
-bevy_ecs_macros = { version = "0.14.0-rc.4" }
+bevy = { version = "0.14.0" }
+bevy_ecs_macros = { version = "0.14.0" }
 serde = { version = "1.0", features = ["derive"] }
